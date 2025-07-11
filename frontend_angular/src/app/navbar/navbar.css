@@ -1,0 +1,46 @@
+  /* Effet de hover */
+  .hover-effect {
+    position: relative;
+    padding: 5px 0;
+    transition: all 0.3s ease;
+    cursor: pointer; /* Curseur normal */
+  }
+  
+  .hover-effect:hover {
+    transform: translateY(-2px);
+    color: #ffffff !important;
+    cursor: pointer; /* Curseur main (pointer) au survol */
+  }
+  
+  /* Soulignement au hover */
+  .hover-effect::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 2px;
+    bottom: 0;
+    left: 0;
+    background-color: #ffffff;
+    transition: width 0.3s ease;
+  }
+  
+  .hover-effect:hover::after {
+    width: 100%;
+  }
+  
+  /* Style pour l'élément actif */
+  .active-link {
+    color: #ffffff !important;
+    font-weight: bold !important;
+    cursor: pointer; /* Curseur main pour l'élément actif */
+  }
+  
+  .active-link::after {
+    content: '';
+    position: absolute;
+    width: 100% !important;
+    height: 2px;
+    bottom: 0;
+    left: 0;
+    background-color: #ffffff;
+  }

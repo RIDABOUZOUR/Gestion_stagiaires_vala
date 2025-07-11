@@ -1,0 +1,53 @@
+<div class="container mt-2">
+    <div class="card">
+        <div class="card-header bg-success-subtle d-flex justify-content-between align-items-center">
+            <span class="text-center flex-grow-1">Liste des départements</span>
+            <button class="btn btn-success btn-sm" routerLink="/nouveau-departement">
+                <i class="bi bi-plus-circle"></i> Ajouter un département
+            </button>
+        </div>
+        <div class="card-body">
+            <div *ngIf="searchFormGroup">
+                <form [formGroup]="searchFormGroup" (ngSubmit)="handleSearchDepartements()">
+                    <div class="input-group">
+                        <label class="input-group-text">Rechercher</label>
+                        <input type="text" formControlName="keyword" class="form-control">
+                        <button class="btn btn-info">
+                            <i class="bi bi-search"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+          
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>id</th>
+                        <th>nom</th>
+                        <th>responsable</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let d of departements">
+                        <td>{{d.id}}</td>
+                        <td>{{d.nom}}</td>
+                        <td>{{d.responsable}}</td>
+                         <td>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <!-- Bouton Modifier -->
+                                <button class="btn btn-warning text-white" >
+                                    <i class="bi bi-pencil-square"></i>
+                                </button>
+                                <!-- Bouton Supprimer -->
+                                <button class="btn btn-danger" >
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,63 @@
+<div class="container mt-2">
+    <div class="card">
+        <div class="card-header bg-success-subtle d-flex justify-content-between align-items-center">
+            <span class="text-center flex-grow-1">Liste des stagiaires</span>
+            <button class="btn btn-success btn-sm" routerLink="/nouveau-stagiaire">
+                <i class="bi bi-plus-circle"></i> Ajouter un stagiaire
+            </button>
+        </div>
+        <div class="card-body">
+            <div *ngIf="searchFormGroup">
+                <form [formGroup]="searchFormGroup" (ngSubmit)="handleSearchStagiaires()">
+                    <div class="input-group">
+                        <label class="input-group-text">Rechercher</label>
+                        <input type="text" formControlName="keyword" class="form-control">
+                        <button class="btn btn-info">
+                            <i class="bi bi-search"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+          
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>id</th>
+                        <th>nom</th>
+                        <th>prenom</th>
+                        <th>email</th>
+                        <th>filière</th>
+                        <th>organisme</th>
+                        <th>departement</th>
+                        <th>stage</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let s of stagiaires">
+                        <td>{{s.id}}</td>
+                        <td>{{s.nom}}</td>
+                        <td>{{s.prenom}}</td>
+                        <td>{{s.email}}</td>
+                        <td>{{s.filiere}}</td>
+                        <td>{{s.organisme}}</td>
+                        <td>{{s.departement.nom}}</td>
+                        <td>{{s.stage.sujet}}</td>
+                        <td>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <!-- Bouton Modifier -->
+                                <button class="btn btn-warning text-white" >
+                                    <i class="bi bi-pencil-square"></i>
+                                </button>
+                                <!-- Bouton Supprimer -->
+                                <button class="btn btn-danger" >
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
