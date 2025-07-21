@@ -1,15 +1,16 @@
 package com.vala.gestionStagiaires.service;
 
 import com.vala.gestionStagiaires.DTOs.StageDto;
-import com.vala.gestionStagiaires.DTOs.StagiaireDto;
+import com.vala.gestionStagiaires.Mappers.EncadrantMapper;
 import com.vala.gestionStagiaires.Mappers.StageMapper;
 import com.vala.gestionStagiaires.entities.Stage;
-import com.vala.gestionStagiaires.entities.Stagiaire;
+import com.vala.gestionStagiaires.enums.StageStatus;
 import com.vala.gestionStagiaires.repository.StageRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 @Service
@@ -19,6 +20,8 @@ public class StageServiceImpl implements StageService{
     private StageRepository stageRepository;
     @Autowired
     private StageMapper stageMapper;
+    @Autowired
+    private EncadrantMapper encadrantMapper;
     @Override
     public List<StageDto> getStages() {
         List<Stage> stages = stageRepository.findAll();
@@ -43,4 +46,28 @@ public class StageServiceImpl implements StageService{
         }
         return stageDtos;
     }
+
+    @Override
+    public void deleteStage(Long id) {
+        stageRepository.deleteById(id);
+    }
+
+    @Override
+    public Stage updateStage(StageDto stageDto, Long id) {
+        Stage existingStage = stageRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Stage non trouvé avec id: " + id));
+
+        existingStage.setSujet(stageDto.getSujet());
+        existingStage.setEncadrant(encadrantMapper.fromEncadrantDto(stageDto.getEncadrant()));
+        existingStage.setDateDebut(stageDto.getDateDebut());
+        existingStage.setDateFin(stageDto.getDateFin());
+        existingStage.setStatus(stageDto.getStatus());
+        return stageRepository.save(existingStage);
+    }
+
+    @Override
+    public StageDto getStageById(Long id) {
+       return stageMapper.fromStage(stageRepository.findById(id).orElseThrow());
+    }
+
 }

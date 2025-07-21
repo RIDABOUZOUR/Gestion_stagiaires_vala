@@ -10,4 +10,7 @@ public interface StageService {
     Stage addStage(StageDto stageDto);
 
     List<StageDto> searchStage(String keyword);
+    void deleteStage(Long id);
+    Stage updateStage(StageDto stageDto, Long id);
+    StageDto getStageById(Long id);
 }

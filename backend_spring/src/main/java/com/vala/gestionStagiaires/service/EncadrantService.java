@@ -10,4 +10,7 @@ public interface EncadrantService {
     Encadrant addEncadrant(EncadrantDto encadrantDto);
 
     List<EncadrantDto> searchEncadrant(String keyword);
+    void deleteEncadrant(Long id);
+    Encadrant updateEncadrant(EncadrantDto encadrantDto, Long id);
+    EncadrantDto getEncadrantById(Long id);
 }

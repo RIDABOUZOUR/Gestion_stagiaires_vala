@@ -20,6 +20,7 @@ public class Departement {
     private Long id;
 
     @Size(min = 3, max = 40,message = "Le nom ne doit pas dépasser 40 caractères")
+    @Column(unique = true)
     private String nom;
 
     @Size(min = 3, max = 40,message = "Le nom du responsable ne doit pas dépasser 40 caractères")

@@ -28,13 +28,21 @@ public class StagiaireController {
     public List<StagiaireDto> searchStagiaire( @RequestParam(name = "keyword",defaultValue = "") String keyword){
         return stagiaireService.searchStagiaire(keyword);
     }
+
     @PostMapping("/stagiaires")
     public Stagiaire saveStagiaire(@RequestBody StagiaireDto stagiaireDto){
         return stagiaireService.addStagiare(stagiaireDto);
     }
-    @DeleteMapping("/stagiaires/id/{id}")
+
+    @DeleteMapping("/stagiaires/{id}")
     public void deleteStagiaire(@PathVariable Long id){
         stagiaireService.deleteStagiaire(id);
     }
+
+    @PutMapping("/stagiaires/{id}")
+    public Stagiaire updateStagiaire(@RequestBody StagiaireDto stagiaireDto, @PathVariable Long id) {
+        return stagiaireService.updateStagiaire(stagiaireDto, id);
+    }
+
 
 }

@@ -3,6 +3,9 @@ import { Component, OnInit } from '@angular/core';
 import { error } from 'console';
 import { Stage } from '../services/stage';  
 import { FormBuilder, FormGroup } from '@angular/forms';
+import { StageModel } from '../models/stage.model';  
+
+
 
 @Component({
   selector: 'app-stages',  
@@ -11,13 +14,12 @@ import { FormBuilder, FormGroup } from '@angular/forms';
   styleUrl: './stages.css'     
 })
 export class Stages implements OnInit {
-handleSearchStagiaires() {
-throw new Error('Method not implemented.');
-}  
+
+
 
   stages : any;  
   searchFormGroup! : FormGroup;
-stagiaires: any;
+  stagiaires: any;
   constructor(private stageService:Stage, private fb:FormBuilder ){}  
   
   ngOnInit(): void {
@@ -46,5 +48,19 @@ stagiaires: any;
     }
    }); 
   }
+handleDeleteStage(stage: StageModel) {
+  if (confirm(`Voulez-vous vraiment supprimer le stage "${stage.sujet}" ?`)) {
+    this.stageService.deleteStage(stage.id).subscribe({
+      next: () => {
+        alert(`Le stage "${stage.sujet}" a été supprimé avec succès`);
+        window.location.reload(); 
+      },
+      error: (err) => {
+        console.error('Erreur suppression:', err);
+        alert(`Erreur lors de la suppression : ${err.message || 'Problème serveur'}`);
+      }
+    });
+  }
+}
 
 }

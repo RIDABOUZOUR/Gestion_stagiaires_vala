@@ -1,14 +1,13 @@
 package com.vala.gestionStagiaires.entities;
 
 
-import com.vala.gestionStagiaires.enums.StageStaus;
+import com.vala.gestionStagiaires.enums.StageStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
-import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
@@ -36,7 +35,7 @@ public class Stage {
     private Date dateFin;
 
     @Enumerated(EnumType.STRING)
-    private StageStaus status;
+    private StageStatus status;
 
     @OneToMany(mappedBy = "stage")
     private List<Stagiaire> stagiaire;

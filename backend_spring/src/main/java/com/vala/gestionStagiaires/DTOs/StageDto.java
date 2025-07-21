@@ -1,10 +1,9 @@
 package com.vala.gestionStagiaires.DTOs;
 
-import com.vala.gestionStagiaires.enums.StageStaus;
+import com.vala.gestionStagiaires.enums.StageStatus;
 import lombok.Data;
 
 import java.util.Date;
-import java.util.List;
 
 
 @Data
@@ -18,7 +17,7 @@ public class StageDto {
 
     private Date dateFin;
 
-    private StageStaus status;
+    private StageStatus status;
 
     private EncadrantDto encadrant;
 

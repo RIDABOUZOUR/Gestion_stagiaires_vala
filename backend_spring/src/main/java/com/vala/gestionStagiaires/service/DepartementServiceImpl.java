@@ -44,4 +44,25 @@ public class DepartementServiceImpl implements DepartementService{
         }
         return departementDtos;
     }
+
+    @Override
+    public void deleteDepartement(Long id) {
+        departementRepository.deleteById(id);
+    }
+
+    @Override
+    public Departement updateDepartement(DepartementDto departementDto, Long id) {
+        Departement existingDepartement = departementRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Département non trouvé avec id: " + id));
+        existingDepartement.setNom(departementDto.getNom());
+        existingDepartement.setResponsable(departementDto.getResponsable());
+        return departementRepository.save(existingDepartement);
+    }
+
+    @Override
+    public DepartementDto getDepartementById(Long id) {
+        return departementMapper.fromDepartement(departementRepository.findById(id).orElseThrow());
+    }
 }
+//Departement departement = departementRepository.getReferenceById(id);
+//        DepartementDto updatedDepartement = new DepartementDto();

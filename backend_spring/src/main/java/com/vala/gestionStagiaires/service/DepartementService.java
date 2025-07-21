@@ -10,4 +10,7 @@ public interface DepartementService {
     Departement addDepartement(DepartementDto departementDto);
 
     List<DepartementDto> searchDepartement(String keyword);
+    void deleteDepartement(Long id);
+    Departement updateDepartement(DepartementDto departementDto,Long id);
+    DepartementDto getDepartementById(Long id);
 }

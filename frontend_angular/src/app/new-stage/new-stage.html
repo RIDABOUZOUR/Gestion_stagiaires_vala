@@ -1,35 +1,82 @@
-<div class="container mt-2">
-    <div class="card col-md-7 offset-3">
-        <div class="card-header">
-            Créer un nouveau stage 
+<div class="container-fluid mt-4 px-3 px-md-4">
+  <div class="row justify-content-center">
+    <div class="col-12 col-md-10 col-lg-8 col-xl-7">
+      <div class="card shadow-sm">
+        <!-- En-tête -->
+        <div class="card-header bg-success text-white d-flex justify-content-between align-items-center py-2">
+          <h3 class="h5 mb-0">
+            <i class="bi bi-briefcase me-2"></i>Créer un nouveau stage
+          </h3>
         </div>
-        <div class="card-body">
-            <form [formGroup]="newStageFormGroup" (ngSubmit)="handleSaveStage()">
+
+        <!-- Corps -->
+        <div class="card-body p-3 p-md-4">
+          <form [formGroup]="newStageFormGroup" (ngSubmit)="handleSaveStage()">
+            <div class="row g-3">
+              <!-- Colonne 1 -->
+              <div class="col-md-6">
                 <div class="mb-3">
-                    <label class="form-label">Sujet</label>
-                    <input type="text" formControlName="sujet" class="form-control">
+                  <label class="form-label fw-bold">Sujet <span class="text-danger">*</span></label>
+                  <input type="text" formControlName="sujet" class="form-control" placeholder="Entrez le sujet du stage" required>
+                  <div *ngIf="newStageFormGroup.get('sujet')?.invalid && newStageFormGroup.get('sujet')?.touched" 
+                       class="invalid-feedback d-block">
+                    <small>Le sujet est obligatoire</small>
+                  </div>
                 </div>
+
                 <div class="mb-3">
-                    <label class="form-label">Date de début</label>
-                    <input type="date" formControlName="dateDebut" class="form-control">
+                  <label class="form-label fw-bold">Date de début <span class="text-danger">*</span></label>
+                  <input type="date" formControlName="dateDebut" class="form-control" required>
                 </div>
+              </div>
+
+              <!-- Colonne 2 -->
+              <div class="col-md-6">
                 <div class="mb-3">
-                    <label class="form-label">Date de fin</label>
-                    <input type="date" formControlName="dateFin" class="form-control">
+                  <label class="form-label fw-bold">Statut <span class="text-danger">*</span></label>
+                  <select formControlName="status" class="form-select" required>
+                    <option value="">-- Sélectionner un statut --</option>
+                    <option value="EN_COURS">En cours</option>
+                    <option value="TERMINE">Terminé</option>
+                    <option value="ANNULE">Annulé</option>
+                    <option value="PLANIFIE">Planifié</option>
+                  </select>
                 </div>
+
                 <div class="mb-3">
-                    <label class="form-label">Encadrant</label>
-                    <select formControlName="encadrant" class="form-control">
-                        <option value="">-- Sélectionner un encadrant --</option>
-                        <option *ngFor="let encadrant of encadrantsList" [value]="encadrant.id">
-                            {{encadrant.nom}} {{encadrant.prenom}}
-                        </option>
-                    </select>
+                  <label class="form-label fw-bold">Date de fin</label>
+                  <input type="date" formControlName="dateFin" class="form-control">
                 </div>
+              </div>
+            </div>
+
+            <!-- Ligne pleine largeur -->
+            <div class="row">
+              <div class="col-12">
                 <div class="mb-3">
-                    <button type="submit" class="btn btn-primary">Enregistrer</button>
+                  <label class="form-label fw-bold">Encadrant <span class="text-danger">*</span></label>
+                  <select formControlName="encadrant" class="form-select" required>
+                    <option value="">-- Sélectionner un encadrant --</option>
+                    <option *ngFor="let encadrant of encadrantsList" [value]="encadrant.id">
+                      {{encadrant.nom}} {{encadrant.prenom}}
+                    </option>
+                  </select>
                 </div>
-            </form>
+              </div>
+            </div>
+
+            <!-- Boutons -->
+            <div class="d-flex justify-content-between mt-4">
+              <button type="button" class="btn btn-outline-secondary" routerLink="/stages">
+                <i class="bi bi-arrow-left me-1"></i> Retour
+              </button>
+              <button [disabled]="!newStageFormGroup.valid" type="submit" class="btn btn-success">
+                <i class="bi bi-check-circle me-1"></i> Enregistrer
+              </button>
+            </div>
+          </form>
         </div>
+      </div>
     </div>
+  </div>
 </div>

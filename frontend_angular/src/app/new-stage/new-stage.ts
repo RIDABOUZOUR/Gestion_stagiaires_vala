@@ -21,7 +21,7 @@ export class NewStage implements OnInit{
       dateDebut: ['', Validators.required],
       dateFin: ['', Validators.required],
       encadrant: ['', Validators.required],
-      status: ['EN_COURS']
+      status: ['']
     });
      this.encadrantService.getEncadrants().subscribe(
       (data) => {
@@ -46,7 +46,6 @@ export class NewStage implements OnInit{
     return;
   }
 
-  // Créer un objet stage avec encadrant complet
   const stage = {
     ...this.newStageFormGroup.value,
     encadrant: encadrantObject

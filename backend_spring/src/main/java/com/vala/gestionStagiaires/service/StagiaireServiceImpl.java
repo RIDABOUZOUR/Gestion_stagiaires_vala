@@ -1,6 +1,8 @@
 package com.vala.gestionStagiaires.service;
 
 import com.vala.gestionStagiaires.DTOs.StagiaireDto;
+import com.vala.gestionStagiaires.Mappers.DepartementMapper;
+import com.vala.gestionStagiaires.Mappers.StageMapper;
 import com.vala.gestionStagiaires.Mappers.StagiaireMapper;
 import com.vala.gestionStagiaires.entities.Stagiaire;
 import com.vala.gestionStagiaires.exceptions.StagiaireNotFoundException;
@@ -20,7 +22,10 @@ public class StagiaireServiceImpl implements StagiaireService {
     private StagiaireRepository stagiaireRepository;
     @Autowired
     private StagiaireMapper mapper;
-
+    @Autowired
+    private DepartementMapper departementMapper;
+    @Autowired
+    private StageMapper stageMapper;
 
     @Override
     public List<StagiaireDto> getAllStagiares() {
@@ -42,23 +47,29 @@ public class StagiaireServiceImpl implements StagiaireService {
 
     @Override
     public void deleteStagiaire(Long id) {
+
         stagiaireRepository.deleteById(id);
     }
 
-    @Override
-    public Stagiaire editStagiaire(Long id, StagiaireDto updatedStagiare) {
-        Stagiaire stagiaire = stagiaireRepository.findById(id).orElseThrow();
-        stagiaire.setDateNaissance(updatedStagiare.getDateNaissance());
-        stagiaire.setTelephone(updatedStagiare.getTelephone());
-        stagiaire.setPrenom(updatedStagiare.getPrenom());
-        stagiaire.setNom(updatedStagiare.getNom());
-        stagiaire.setSexe(updatedStagiare.getSexe());
-        stagiaire.setEmail(updatedStagiare.getEmail());
-        stagiaire.setAdresse(updatedStagiare.getAdresse());
-        stagiaire.setNiveau(updatedStagiare.getNiveau());
-        return stagiaire;
-    }
 
+    @Override
+    public Stagiaire updateStagiaire(StagiaireDto updatedStagiare, Long id) {
+        Stagiaire existingStagiaire = stagiaireRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Stagiaire non trouvé avec id: " + id));
+
+        existingStagiaire.setDateNaissance(updatedStagiare.getDateNaissance());
+        existingStagiaire.setTelephone(updatedStagiare.getTelephone());
+        existingStagiaire.setPrenom(updatedStagiare.getPrenom());
+        existingStagiaire.setNom(updatedStagiare.getNom());
+        existingStagiaire.setSexe(updatedStagiare.getSexe());
+        existingStagiaire.setEmail(updatedStagiare.getEmail());
+        existingStagiaire.setAdresse(updatedStagiare.getAdresse());
+        existingStagiaire.setNiveau(updatedStagiare.getNiveau());
+        existingStagiaire.setDepartement(departementMapper.fromDepartementDto(updatedStagiare.getDepartement()));
+        existingStagiaire.setStage(stageMapper.fromStageDto(updatedStagiare.getStage()));
+        return stagiaireRepository.save(existingStagiaire);
+    }
+    
     @Override
     public StagiaireDto getStagiaire(Long id) {
         Stagiaire stagiaire = stagiaireRepository.findById(id)

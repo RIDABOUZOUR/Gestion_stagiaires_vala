@@ -1,0 +1,66 @@
+<div class="container-fluid mt-4 px-3 px-md-4" *ngIf="encadrantForm">
+  <div class="row justify-content-center">
+    <div class="col-12 col-md-10 col-lg-8 col-xl-7">
+      <div class="card shadow-sm">
+        <div class="card-header bg-warning text-white d-flex justify-content-between align-items-center py-2">
+          <h3 class="h5 mb-0">
+            <i class="bi bi-pencil-square me-2"></i>Modifier l'encadrant
+          </h3>
+        </div>
+
+        <div class="card-body p-3 p-md-4">
+          <form [formGroup]="encadrantForm" (ngSubmit)="onUpdate()">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label class="form-label fw-bold">Nom <span class="text-danger">*</span></label>
+                  <input type="text" formControlName="nom" class="form-control" placeholder="Entrez le nom" required>
+                  <div *ngIf="encadrantForm.get('nom')?.invalid && encadrantForm.get('nom')?.touched" class="invalid-feedback d-block">
+                    <small>Le nom est obligatoire</small>
+                  </div>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label fw-bold">Email <span class="text-danger">*</span></label>
+                  <input type="email" formControlName="email" class="form-control" placeholder="Entrez l'email" required>
+                  <div *ngIf="encadrantForm.get('email')?.invalid && encadrantForm.get('email')?.touched" class="invalid-feedback d-block">
+                    <small *ngIf="encadrantForm.get('email')?.errors?.['required']">
+                      L'email est obligatoire
+                    </small>
+                    <small *ngIf="encadrantForm.get('email')?.errors?.['email']">
+                      Veuillez entrer un email valide
+                    </small>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label class="form-label fw-bold">Prénom <span class="text-danger">*</span></label>
+                  <input type="text" formControlName="prenom" class="form-control" placeholder="Entrez le prénom" required>
+                  <div *ngIf="encadrantForm.get('prenom')?.invalid && encadrantForm.get('prenom')?.touched" class="invalid-feedback d-block">
+                    <small>Le prénom est obligatoire</small>
+                  </div>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label fw-bold">Téléphone</label>
+                  <input type="tel" formControlName="telephone" class="form-control" placeholder="Entrez le téléphone">
+                </div>
+              </div>
+            </div>
+
+            <div class="d-flex justify-content-between mt-4">
+              <button type="button" class="btn btn-outline-secondary" routerLink="/encadrants">
+                <i class="bi bi-arrow-left me-1"></i> Retour
+              </button>
+              <button [disabled]="!encadrantForm.valid" type="submit" class="btn btn-warning">
+                <i class="bi bi-check-circle me-1"></i> Enregistrer les modifications
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,46 +1,45 @@
-  /* Effet de hover */
+ /* Effets de hover */
   .hover-effect {
-    position: relative;
-    padding: 5px 0;
     transition: all 0.3s ease;
-    cursor: pointer; /* Curseur normal */
+    border-left: 4px solid transparent;
   }
   
   .hover-effect:hover {
-    transform: translateY(-2px);
-    color: #ffffff !important;
-    cursor: pointer; /* Curseur main (pointer) au survol */
+    background: rgba(255, 255, 255, 0.05);
+    border-left-color: #0d6efd;
+    padding-left: 20px !important;
   }
   
-  /* Soulignement au hover */
-  .hover-effect::after {
-    content: '';
-    position: absolute;
-    width: 0;
-    height: 2px;
-    bottom: 0;
-    left: 0;
-    background-color: #ffffff;
-    transition: width 0.3s ease;
-  }
-  
-  .hover-effect:hover::after {
-    width: 100%;
-  }
-  
-  /* Style pour l'élément actif */
+  /* Lien actif */
   .active-link {
-    color: #ffffff !important;
-    font-weight: bold !important;
-    cursor: pointer; /* Curseur main pour l'élément actif */
+    color: white !important;
+    font-weight: 600 !important;
   }
   
-  .active-link::after {
+  .navbar .active-link::after {
     content: '';
     position: absolute;
-    width: 100% !important;
-    height: 2px;
-    bottom: 0;
-    left: 0;
-    background-color: #ffffff;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 24px;
+    height: 3px;
+    background: white;
+    border-radius: 3px;
+  }
+  
+  /* Dégradé de couleur */
+  .bg-gradient-primary {
+    background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
+  }
+  
+  /* Bouton hamburger */
+  .navbar-toggler {
+    padding: 0.35rem;
+    transition: all 0.2s ease;
+  }
+  
+  .navbar-toggler:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    transform: scale(1.05);
   }

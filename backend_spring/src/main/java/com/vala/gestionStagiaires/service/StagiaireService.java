@@ -9,7 +9,7 @@ public interface StagiaireService {
     List<StagiaireDto> getAllStagiares();
     Stagiaire addStagiare(StagiaireDto stagiaireDto);
     void deleteStagiaire(Long id);
-    Stagiaire editStagiaire(Long id, StagiaireDto updatedStagiare);
+    Stagiaire updateStagiaire( StagiaireDto updatedStagiare,Long id);
     StagiaireDto getStagiaire(Long id);
 
     List<StagiaireDto> searchStagiaire(String keyword);

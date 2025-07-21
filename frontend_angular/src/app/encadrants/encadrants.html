@@ -1,58 +1,68 @@
-<div class="container mt-2">
-    <div class="card">
-        <div class="card-header bg-success-subtle d-flex justify-content-between align-items-center">
-            <span class="text-center flex-grow-1">Liste des encadrants</span>
-            <button class="btn btn-success btn-sm" routerLink="/nouvel-encadrant">
-                <i class="bi bi-plus-circle"></i> Ajouter un encadrant
-            </button>
-        </div>
-        <div class="card-body">
-            <div *ngIf="searchFormGroup">
-                <form [formGroup]="searchFormGroup" (ngSubmit)="handleSearchEncadrants()">
-                    <div class="input-group">
-                        <label class="input-group-text">Rechercher</label>
-                        <input type="text" formControlName="keyword" class="form-control">
-                        <button class="btn btn-info">
-                            <i class="bi bi-search"></i>
-                        </button>
-                    </div>
-                </form>
-            </div>
-          
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>id</th>
-                        <th>nom</th>
-                        <th>prenom</th>
-                        <th>email</th>
-                        <th>telephone</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr *ngFor="let e of encadrants">
-                        <td>{{e.id}}</td>
-                        <td>{{e.nom}}</td>
-                        <td>{{e.prenom}}</td>
-                        <td>{{e.email}}</td>
-                        <td>{{e.telephone}}</td>
-                        
-                         <td>
-                            <div class="btn-group btn-group-sm" role="group">
-                                <!-- Bouton Modifier -->
-                                <button class="btn btn-warning text-white" >
-                                    <i class="bi bi-pencil-square"></i>
-                                </button>
-                                <!-- Bouton Supprimer -->
-                                <button class="btn btn-danger" >
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+<div class="container-fluid mt-4 px-3 px-md-4">
+  <div class="card shadow-sm">
+    <!-- En-tête -->
+    <div class="card-header bg-success text-white d-flex flex-column flex-md-row justify-content-between align-items-center gap-2 py-2">
+      <h3 class="h5 mb-0 text-center text-md-start flex-grow-1">
+        <i class="bi bi-person-badge me-2"></i>Liste des encadrants
+      </h3>
+      <button class="btn btn-light btn-sm" routerLink="/new-encadrant">
+        <i class="bi bi-plus-circle me-1"></i> Ajouter
+      </button>
     </div>
+
+    <div class="card-body p-0">
+      <!-- Recherche -->
+      <div class="p-3 border-bottom" *ngIf="searchFormGroup">
+        <form [formGroup]="searchFormGroup" (ngSubmit)="handleSearchEncadrants()">
+          <div class="input-group shadow-sm">
+            <span class="input-group-text bg-white">
+              <i class="bi bi-search text-muted"></i>
+            </span>
+            <input type="text" formControlName="keyword" class="form-control" placeholder="Rechercher...">
+            <button class="btn btn-success" type="submit">
+              <i class="bi bi-arrow-right"></i>
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Tableau responsive -->
+      <div class="table-responsive">
+        <table class="table table-hover mb-0 align-middle">
+          <thead class="table-light text-nowrap">
+            <tr>
+              <th>ID</th>
+              <th>Nom</th>
+              <th>Prénom</th>
+              <th>Email</th>
+              <th>Téléphone</th>
+              <th class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let e of encadrants">
+              <td>{{e.id}}</td>
+              <td>{{e.nom}}</td>
+              <td>{{e.prenom}}</td>
+              <td>{{e.email}}</td>
+              <td>{{e.telephone}}</td>
+              <td class="text-end">
+                <div class="btn-group btn-group-sm" role="group">
+                  <button [routerLink]="['/edit-encadrant', e.id]" class="btn btn-outline-warning">
+                    <i class="bi bi-pencil-square"></i>
+                    <span class="d-none d-md-inline ms-1">Modif.</span>
+                  </button>
+                  <button (click)="handleDeleteEncadrant(e)" class="btn btn-outline-danger">
+                    <i class="bi bi-trash"></i>
+                    <span class="d-none d-md-inline ms-1">Suppr.</span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
 </div>
