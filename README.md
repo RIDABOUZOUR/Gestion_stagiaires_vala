@@ -13,6 +13,7 @@ Elle permet de gérer les stagiaires, stages, départements et encadrants, avec 
 - **ORM** : Spring Data JPA  
 - **API** : RESTful (Spring Boot)  
 - **AOP / Logs** : Spring AOP (aspect de journalisation)  
+- **Tests** : JUnit 5, Mockito, MockMvc, JaCoCo  
 - **Conteneurisation** : Docker / Docker Compose  
 
 ---
@@ -78,6 +79,32 @@ cd frontend_angular
 npm install
 npm start        # http://localhost:4200
 ```
+
+---
+
+## 🧪 Tests (backend)
+
+Les tests unitaires s'exécutent sur une base **H2 en mémoire** (profil `test`),
+sans MySQL ni aucune configuration externe.
+
+```bash
+cd backend_spring
+
+./mvnw test       # lance uniquement les tests
+./mvnw verify     # tests + rapport de couverture JaCoCo
+```
+
+Le rapport de couverture est généré dans
+`backend_spring/target/site/jacoco/index.html`.
+
+Couverture :
+
+| Couche | Tests |
+|--------|-------|
+| Services (`*ServiceImpl`) | JUnit 5 + Mockito (`@Mock` / `@InjectMocks`) |
+| Contrôleurs REST | MockMvc *standalone* + validation Bean Validation |
+| `GlobalExceptionHandler` | Tests directs des handlers (400 / 404 / 409) |
+| `LoggingAspect` | Tests unitaires de l'aspect AOP |
 
 ---
 
