@@ -3,6 +3,7 @@ package com.vala.gestionStagiaires.service;
 import com.vala.gestionStagiaires.DTOs.DepartementDto;
 import com.vala.gestionStagiaires.Mappers.DepartementMapper;
 import com.vala.gestionStagiaires.entities.Departement;
+import com.vala.gestionStagiaires.exceptions.ResourceNotFoundException;
 import com.vala.gestionStagiaires.repository.DepartementRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -27,9 +28,9 @@ public class DepartementServiceImpl implements DepartementService{
     }
 
     @Override
-    public Departement addDepartement(DepartementDto departementDto) {
+    public DepartementDto addDepartement(DepartementDto departementDto) {
         Departement departement = departementMapper.fromDepartementDto(departementDto);
-        return departementRepository.save(departement);
+        return departementMapper.fromDepartement(departementRepository.save(departement));
     }
 
     @Override
@@ -49,16 +50,17 @@ public class DepartementServiceImpl implements DepartementService{
     }
 
     @Override
-    public Departement updateDepartement(DepartementDto departementDto, Long id) {
+    public DepartementDto updateDepartement(DepartementDto departementDto, Long id) {
         Departement existingDepartement = departementRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Département non trouvé avec id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Département", id));
         existingDepartement.setNom(departementDto.getNom());
         existingDepartement.setResponsable(departementDto.getResponsable());
-        return departementRepository.save(existingDepartement);
+        return departementMapper.fromDepartement(departementRepository.save(existingDepartement));
     }
 
     @Override
     public DepartementDto getDepartementById(Long id) {
-        return departementMapper.fromDepartement(departementRepository.findById(id).orElseThrow());
+        return departementMapper.fromDepartement(departementRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Département", id)));
     }
 }

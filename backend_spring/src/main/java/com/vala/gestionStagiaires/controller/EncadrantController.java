@@ -2,9 +2,11 @@ package com.vala.gestionStagiaires.controller;
 
 
 import com.vala.gestionStagiaires.DTOs.EncadrantDto;
-import com.vala.gestionStagiaires.entities.Encadrant;
 import com.vala.gestionStagiaires.service.EncadrantService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -15,32 +17,35 @@ public class EncadrantController {
     private EncadrantService encadrantService;
 
     @GetMapping("/encadrants")
-    public List<EncadrantDto> getEncadrant(){
-        return encadrantService.getEncadrant();
+    public ResponseEntity<List<EncadrantDto>> getEncadrant(){
+        return ResponseEntity.ok(encadrantService.getEncadrant());
     }
 
     @PostMapping("/encadrants")
-    public Encadrant addStage(@RequestBody EncadrantDto encadrantDto){
-        return encadrantService.addEncadrant(encadrantDto);
+    public ResponseEntity<EncadrantDto> addStage(@Valid @RequestBody EncadrantDto encadrantDto){
+        EncadrantDto created = encadrantService.addEncadrant(encadrantDto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
+
     @GetMapping("/encadrants/search")
-    public List<EncadrantDto> searchEncadrant(@RequestParam(name = "keyword",defaultValue = "") String keyword){
-        return encadrantService.searchEncadrant(keyword);
+    public ResponseEntity<List<EncadrantDto>> searchEncadrant(@RequestParam(name = "keyword",defaultValue = "") String keyword){
+        return ResponseEntity.ok(encadrantService.searchEncadrant(keyword));
     }
 
     @DeleteMapping("/encadrants/{id}")
-    public void deleteEncadrant(@PathVariable Long id){
+    public ResponseEntity<Void> deleteEncadrant(@PathVariable Long id){
         encadrantService.deleteEncadrant(id);
+        return ResponseEntity.noContent().build();
     }
 
     @PutMapping("/encadrants/{id}")
-    public Encadrant updateEncadrant(@RequestBody EncadrantDto encadrantDto , @PathVariable Long id){
-        return encadrantService.updateEncadrant(encadrantDto,id);
+    public ResponseEntity<EncadrantDto> updateEncadrant(@Valid @RequestBody EncadrantDto encadrantDto, @PathVariable Long id){
+        return ResponseEntity.ok(encadrantService.updateEncadrant(encadrantDto,id));
     }
 
     @GetMapping("/encadrants/{id}")
-    public EncadrantDto getEncadrantById(@PathVariable Long id){
-        return encadrantService.getEncadrantById(id);
+    public ResponseEntity<EncadrantDto> getEncadrantById(@PathVariable Long id){
+        return ResponseEntity.ok(encadrantService.getEncadrantById(id));
     }
 
 }

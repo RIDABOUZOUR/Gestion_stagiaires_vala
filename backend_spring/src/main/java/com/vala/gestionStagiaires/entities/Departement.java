@@ -1,7 +1,6 @@
 package com.vala.gestionStagiaires.entities;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Size;
 import lombok.*;
 
 import java.util.List;
@@ -17,11 +16,9 @@ public class Departement {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Size(min = 3, max = 40,message = "Le nom ne doit pas dépasser 40 caractères")
     @Column(unique = true)
     private String nom;
 
-    @Size(min = 3, max = 40,message = "Le nom du responsable ne doit pas dépasser 40 caractères")
     private String responsable;
 
     @OneToMany

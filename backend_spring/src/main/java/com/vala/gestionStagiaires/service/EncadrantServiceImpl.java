@@ -3,6 +3,7 @@ package com.vala.gestionStagiaires.service;
 import com.vala.gestionStagiaires.DTOs.EncadrantDto;
 import com.vala.gestionStagiaires.Mappers.EncadrantMapper;
 import com.vala.gestionStagiaires.entities.Encadrant;
+import com.vala.gestionStagiaires.exceptions.ResourceNotFoundException;
 import com.vala.gestionStagiaires.repository.EncadrantRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,10 +30,9 @@ public class EncadrantServiceImpl implements EncadrantService {
     }
 
     @Override
-    public Encadrant addEncadrant(EncadrantDto encadrantDto) {
+    public EncadrantDto addEncadrant(EncadrantDto encadrantDto) {
         Encadrant encadrant = encadrantMapper.fromEncadrantDto(encadrantDto);
-        return encadrantRepository.save(encadrant);
-
+        return encadrantMapper.fromEncadrant(encadrantRepository.save(encadrant));
     }
 
     @Override
@@ -51,26 +51,21 @@ public class EncadrantServiceImpl implements EncadrantService {
         encadrantRepository.deleteById(id);
     }
 
-
-
-
-
-
     @Override
-    public Encadrant updateEncadrant(EncadrantDto encadrantDto, Long id) {
+    public EncadrantDto updateEncadrant(EncadrantDto encadrantDto, Long id) {
         Encadrant existingEncadrant = encadrantRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Département non trouvé avec id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Encadrant", id));
         existingEncadrant.setNom(encadrantDto.getNom());
         existingEncadrant.setPrenom(encadrantDto.getPrenom());
         existingEncadrant.setTelephone(encadrantDto.getTelephone());
         existingEncadrant.setEmail(encadrantDto.getEmail());
-        return encadrantRepository.save(existingEncadrant);
+        return encadrantMapper.fromEncadrant(encadrantRepository.save(existingEncadrant));
     }
 
     @Override
     public EncadrantDto getEncadrantById(Long id) {
-        return encadrantMapper.fromEncadrant(encadrantRepository.findById(id).orElseThrow());
-
+        return encadrantMapper.fromEncadrant(encadrantRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Encadrant", id)));
     }
 
 }

@@ -41,9 +41,9 @@ public class StagiaireServiceImpl implements StagiaireService {
     }
 
     @Override
-    public Stagiaire addStagiare(StagiaireDto stagiaireDto) {
+    public StagiaireDto addStagiare(StagiaireDto stagiaireDto) {
         Stagiaire stagiaire = mapper.fromStagiaireDto(stagiaireDto);
-        return stagiaireRepository.save(stagiaire);
+        return mapper.fromStagiaire(stagiaireRepository.save(stagiaire));
 
     }
 
@@ -55,9 +55,9 @@ public class StagiaireServiceImpl implements StagiaireService {
 
 
     @Override
-    public Stagiaire updateStagiaire(StagiaireDto updatedStagiare, Long id) {
+    public StagiaireDto updateStagiaire(StagiaireDto updatedStagiare, Long id) {
         Stagiaire existingStagiaire = stagiaireRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Stagiaire non trouvé avec id: " + id));
+                .orElseThrow(() -> new StagiaireNotFoundException(id));
 
         existingStagiaire.setDateNaissance(updatedStagiare.getDateNaissance());
         existingStagiaire.setTelephone(updatedStagiare.getTelephone());
@@ -71,7 +71,7 @@ public class StagiaireServiceImpl implements StagiaireService {
         existingStagiaire.setFiliere(updatedStagiare.getFiliere());
         existingStagiaire.setDepartement(departementMapper.fromDepartementDto(updatedStagiare.getDepartement()));
         existingStagiaire.setStage(stageMapper.fromStageDto(updatedStagiare.getStage()));
-        return stagiaireRepository.save(existingStagiaire);
+        return mapper.fromStagiaire(stagiaireRepository.save(existingStagiaire));
     }
     
     @Override

@@ -1,10 +1,11 @@
 package com.vala.gestionStagiaires.controller;
 
 import com.vala.gestionStagiaires.DTOs.StagiaireDto;
-import com.vala.gestionStagiaires.entities.Stagiaire;
 import com.vala.gestionStagiaires.exceptions.StagiaireNotFoundException;
 import com.vala.gestionStagiaires.service.StagiaireService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import org.springframework.web.bind.annotation.*;
@@ -18,33 +19,35 @@ public class StagiaireController {
     StagiaireService stagiaireService;
 
     @GetMapping("/stagiaires")
-    public List<StagiaireDto> getAllStagiaires(){
-        return stagiaireService.getAllStagiares();
+    public ResponseEntity<List<StagiaireDto>> getAllStagiaires(){
+        return ResponseEntity.ok(stagiaireService.getAllStagiares());
     }
 
     @GetMapping("/stagiaires/{id}")
-    public StagiaireDto getStagiaire(@PathVariable(name = "id") Long id)throws StagiaireNotFoundException {
-        return stagiaireService.getStagiaire(id);
+    public ResponseEntity<StagiaireDto> getStagiaire(@PathVariable(name = "id") Long id)throws StagiaireNotFoundException {
+        return ResponseEntity.ok(stagiaireService.getStagiaire(id));
     }
 
     @GetMapping("/stagiaires/search")
-    public List<StagiaireDto> searchStagiaire( @RequestParam(name = "keyword",defaultValue = "") String keyword){
-        return stagiaireService.searchStagiaire(keyword);
+    public ResponseEntity<List<StagiaireDto>> searchStagiaire(@RequestParam(name = "keyword",defaultValue = "") String keyword){
+        return ResponseEntity.ok(stagiaireService.searchStagiaire(keyword));
     }
 
     @PostMapping("/stagiaires")
-    public Stagiaire saveStagiaire(@RequestBody StagiaireDto stagiaireDto){
-        return stagiaireService.addStagiare(stagiaireDto);
+    public ResponseEntity<StagiaireDto> saveStagiaire(@Valid @RequestBody StagiaireDto stagiaireDto){
+        StagiaireDto created = stagiaireService.addStagiare(stagiaireDto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @DeleteMapping("/stagiaires/{id}")
-    public void deleteStagiaire(@PathVariable Long id){
+    public ResponseEntity<Void> deleteStagiaire(@PathVariable Long id){
         stagiaireService.deleteStagiaire(id);
+        return ResponseEntity.noContent().build();
     }
 
     @PutMapping("/stagiaires/{id}")
-    public Stagiaire updateStagiaire(@RequestBody StagiaireDto stagiaireDto, @PathVariable Long id) {
-        return stagiaireService.updateStagiaire(stagiaireDto, id);
+    public ResponseEntity<StagiaireDto> updateStagiaire(@Valid @RequestBody StagiaireDto stagiaireDto, @PathVariable Long id) {
+        return ResponseEntity.ok(stagiaireService.updateStagiaire(stagiaireDto, id));
     }
     @GetMapping("/statistiques/departements")
     public ResponseEntity<Map<String, Long>> getStatsParDepartement() {
@@ -52,8 +55,7 @@ public class StagiaireController {
     }
     @GetMapping("/statistiques/filieres")
     public ResponseEntity<Map<String, Long>> getStatistiquesParFiliere() {
-        Map<String, Long> result = stagiaireService.getNombreStagiairesParFiliere();
-        return ResponseEntity.ok(result);
+        return ResponseEntity.ok(stagiaireService.getNombreStagiairesParFiliere());
     }
 
     @GetMapping("/statistiques/organismes")
