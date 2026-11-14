@@ -12,6 +12,7 @@ Elle permet de gérer les stagiaires, stages, départements et encadrants, avec 
 - **Base de données** : MySQL 8  
 - **ORM** : Spring Data JPA  
 - **API** : RESTful (Spring Boot)  
+- **AOP / Logs** : Spring AOP (aspect de journalisation)  
 - **Conteneurisation** : Docker / Docker Compose  
 
 ---
@@ -91,6 +92,7 @@ Toute la configuration sensible est externalisée dans le fichier `.env` (non ve
 | `MYSQL_USER` / `MYSQL_PASSWORD` | Identifiants applicatifs |
 | `CORS_ALLOWED_ORIGINS` | Origines autorisées (séparées par des virgules) |
 | `API_URL` | URL publique du backend (injectée au build frontend) |
+| `LOG_LEVEL_ASPECT` | Niveau des logs de l'aspect AOP (`INFO` ou `DEBUG`) |
 
 > ℹ️ Le CORS est configuré de manière centralisée dans
 > `backend_spring/.../config/CorsConfig.java` — plus aucune origine `*` n'est autorisée.
@@ -109,6 +111,32 @@ Il doit être considéré comme **compromis** :
    > ⚠️ Réécrire l'historique est irréversible et nécessite un `git push --force`.
    > Tous les collaborateurs devront re-cloner le dépôt.
 3. Faire tourner l'historique : prévenir toute personne ayant cloné le dépôt.
+
+---
+
+## 📊 Journalisation (Spring AOP)
+
+Un aspect AOP (`backend_spring/.../aspect/LoggingAspect.java`) journalise automatiquement
+toutes les méthodes des couches **`@Service`** et **`@RestController`**, ainsi que toute
+méthode annotée `@Loggable`.
+
+| Événement | Niveau | Contenu |
+|-----------|--------|---------|
+| Entrée    | `DEBUG` | nom de la méthode + arguments |
+| Sortie    | `INFO`  | nom de la méthode + durée (ms) |
+| Exception | `ERROR` | message + pile d'appels |
+
+Le niveau se règle via la variable `LOG_LEVEL_ASPECT` (`.env`) :
+
+```bash
+LOG_LEVEL_ASPECT=DEBUG docker compose up -d backend   # affiche aussi arguments et résultats
+```
+
+Exemple de sortie :
+```
+INFO  c.v.g.aspect.LoggingAspect : ← DepartementServiceImpl.getDepartement terminé en 12 ms
+DEBUG c.v.g.aspect.LoggingAspect : → DepartementController.addDepartement : [DepartementDto(id=null, nom=DebugLog, ...)]
+```
 
 ---
 
