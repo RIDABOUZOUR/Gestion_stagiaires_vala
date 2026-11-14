@@ -12,47 +12,74 @@ const browserDistFolder = join(import.meta.dirname, '../browser');
 const app = express();
 const angularApp = new AngularNodeAppEngine();
 
-/**
- * Example Express Rest API endpoints can be defined here.
- * Uncomment and define endpoints as necessary.
- *
- * Example:
- * ```ts
- * app.get('/api/{*splat}', (req, res) => {
- *   // Handle API request
- * });
- * ```
- */
+// Derrière un reverse-proxy (docker-compose, ingress…), faire confiance au
+// premier hop permet à Express de résoudre correctement l'IP cliente et le
+// protocole (utile pour les logs et les cookies sécurisés).
+app.set('trust proxy', 1);
+app.disable('x-powered-by');
 
 /**
- * Serve static files from /browser
+ * En-têtes de sécurité appliqués à toutes les réponses.
+ * `connect-src` autorise l'origine du backend configurée via API_ORIGIN.
+ */
+const apiOrigin = process.env['API_ORIGIN'];
+const connectSrc = ["'self'", apiOrigin].filter(Boolean).join(' ');
+
+const contentSecurityPolicy = [
+  "default-src 'self'",
+  "base-uri 'self'",
+  "object-src 'none'",
+  "frame-ancestors 'none'",
+  "form-action 'self'",
+  "img-src 'self' data:",
+  "font-src 'self' https://fonts.gstatic.com data:",
+  // Angular inligne le CSS critique et les polices Google fournissent une feuille de style.
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  // Angular SSR (event replay) injecte un script inline avant l'hydratation.
+  "script-src 'self' 'unsafe-inline'",
+  `connect-src ${connectSrc}`,
+  'upgrade-insecure-requests',
+].join('; ');
+
+app.use((_req, res, next) => {
+  res.setHeader('Content-Security-Policy', contentSecurityPolicy);
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+  res.setHeader('X-DNS-Prefetch-Control', 'off');
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  next();
+});
+
+/**
+ * Sert les fichiers statiques du dossier /browser.
  */
 app.use(
   express.static(browserDistFolder, {
     maxAge: '1y',
     index: false,
     redirect: false,
+    dotfiles: 'ignore',
   }),
 );
 
 /**
- * Handle all other requests by rendering the Angular application.
+ * Toutes les autres requêtes sont rendues par l'application Angular (SSR).
  */
 app.use((req, res, next) => {
   angularApp
     .handle(req)
-    .then((response) =>
-      response ? writeResponseToNodeResponse(response, res) : next(),
-    )
+    .then((response) => (response ? writeResponseToNodeResponse(response, res) : next()))
     .catch(next);
 });
 
 /**
- * Start the server if this module is the main entry point.
- * The server listens on the port defined by the `PORT` environment variable, or defaults to 4000.
+ * Démarre le serveur lorsqu'il est exécuté directement.
+ * Le port provient de la variable d'environnement PORT (4000 par défaut).
  */
 if (isMainModule(import.meta.url)) {
-  const port = process.env['PORT'] || 4000;
+  const port = Number(process.env['PORT'] ?? 4000);
   app.listen(port, (error) => {
     if (error) {
       throw error;
@@ -63,6 +90,6 @@ if (isMainModule(import.meta.url)) {
 }
 
 /**
- * Request handler used by the Angular CLI (for dev-server and during build) or Firebase Cloud Functions.
+ * Handler de requêtes utilisé par le CLI Angular (dev-server, build) ou Firebase.
  */
 export const reqHandler = createNodeRequestHandler(app);

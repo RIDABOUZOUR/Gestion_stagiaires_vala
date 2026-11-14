@@ -11,9 +11,15 @@ RUN npm ci
 
 COPY . .
 
-# URL publique du backend injectée au build (voir docker-compose.yml)
+# URL publique du backend injectée au build (voir docker-compose.yml).
+# On régénère entièrement le fichier d'environnement : plus robuste qu'un sed
+# qui dépendrait du contenu existant.
 ARG API_URL=http://localhost:8080
-RUN sed -i "s|http://localhost:8080|${API_URL}|g" src/environments/environment.prod.ts
+RUN printf '%s\n' \
+      'export const environment = {' \
+      '  production: true,' \
+      "  apiUrl: '${API_URL}'" \
+      '};' > src/environments/environment.prod.ts
 
 RUN npm run build
 
