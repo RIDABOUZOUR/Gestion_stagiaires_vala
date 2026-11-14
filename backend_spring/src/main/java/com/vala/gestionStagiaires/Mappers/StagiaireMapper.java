@@ -1,32 +1,13 @@
 package com.vala.gestionStagiaires.Mappers;
 
+import com.vala.gestionStagiaires.DTOs.StagiaireDto;
+import com.vala.gestionStagiaires.entities.Stagiaire;
+import org.mapstruct.Mapper;
 
-import com.vala.gestionStagiaires.DTOs.*;
-import com.vala.gestionStagiaires.entities.*;
-import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
+@Mapper(componentModel = "spring", uses = {StageMapper.class, DepartementMapper.class})
+public interface StagiaireMapper {
 
+    StagiaireDto fromStagiaire(Stagiaire stagiaire);
 
-@Service
-public class StagiaireMapper {
-    @Autowired private StageMapper stageMapper;
-    @Autowired private EncadrantMapper encadrantMapper;
-    @Autowired private DepartementMapper departementMapper;
-    public StagiaireDto fromStagiaire(Stagiaire stagiaire){
-        StagiaireDto stagiaireDto = new StagiaireDto();
-        BeanUtils.copyProperties(stagiaire,stagiaireDto);
-        stagiaireDto.setStage(stageMapper.fromStage(stagiaire.getStage()));
-        stagiaireDto.setDepartement(departementMapper.fromDepartement(stagiaire.getDepartement()));
-
-        return stagiaireDto;
-    }
-    public Stagiaire fromStagiaireDto(StagiaireDto stagiaireDto){
-        Stagiaire stagiaire = new Stagiaire();
-        BeanUtils.copyProperties(stagiaireDto,stagiaire);
-        stagiaire.setStage(stageMapper.fromStageDto(stagiaireDto.getStage()));
-        stagiaire.setDepartement(departementMapper.fromDepartementDto(stagiaireDto.getDepartement()));
-        return stagiaire;
-    }
-
+    Stagiaire fromStagiaireDto(StagiaireDto stagiaireDto);
 }
