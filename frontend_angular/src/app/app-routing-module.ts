@@ -16,24 +16,23 @@ import { EditStagiaire } from './edit-stagiaire/edit-stagiaire';
 
 const routes: Routes = [
   { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
-  { path: 'dashboard', component: Dashboard },
-  { path: 'stagiaires', component: Stagiaires},
-  { path: 'stages', component: Stages},
-  { path: 'encadrants', component: Encadrants},
-  { path: 'departements', component: Departements },
-  { path: 'new-stage', component: NewStage},
-  { path: 'new-departement', component: NewDeapartement },
-  { path: 'new-encadrant', component: NewEncadrant},
-  { path: 'new-stagiaire', component: NewStagiaire},
-  { path: 'edit-departement/:id', component: EditDepartement },
-  { path: 'edit-encadrant/:id', component: EditEncadrant },
-  { path: 'edit-stage/:id', component: EditStage },
-  { path: 'edit-stagiaire/:id', component: EditStagiaire },
-  
+  { path: 'dashboard', component: Dashboard, data: { title: 'Tableau de bord' } },
+  { path: 'stagiaires', component: Stagiaires, data: { title: 'Stagiaires' } },
+  { path: 'stages', component: Stages, data: { title: 'Stages' } },
+  { path: 'encadrants', component: Encadrants, data: { title: 'Encadrants' } },
+  { path: 'departements', component: Departements, data: { title: 'Départements' } },
+  { path: 'new-stage', component: NewStage, data: { title: 'Nouveau stage' } },
+  { path: 'new-departement', component: NewDeapartement, data: { title: 'Nouveau département' } },
+  { path: 'new-encadrant', component: NewEncadrant, data: { title: 'Nouvel encadrant' } },
+  { path: 'new-stagiaire', component: NewStagiaire, data: { title: 'Nouveau stagiaire' } },
+  { path: 'edit-departement/:id', component: EditDepartement, data: { title: 'Modifier un département' } },
+  { path: 'edit-encadrant/:id', component: EditEncadrant, data: { title: 'Modifier un encadrant' } },
+  { path: 'edit-stage/:id', component: EditStage, data: { title: 'Modifier un stage' } },
+  { path: 'edit-stagiaire/:id', component: EditStagiaire, data: { title: 'Modifier un stagiaire' } },
 ];
 
 @NgModule({
   imports: [RouterModule.forRoot(routes)],
-  exports: [RouterModule]
+  exports: [RouterModule],
 })
 export class AppRoutingModule {}

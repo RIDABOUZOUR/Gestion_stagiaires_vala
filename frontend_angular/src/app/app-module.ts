@@ -1,17 +1,23 @@
 import { NgModule, provideBrowserGlobalErrorListeners } from '@angular/core';
-import { BrowserModule, provideClientHydration, withEventReplay } from '@angular/platform-browser';
+import {
+  BrowserModule,
+  provideClientHydration,
+  withEventReplay,
+} from '@angular/platform-browser';
+import { provideHttpClient } from '@angular/common/http';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { AppRoutingModule } from './app-routing-module';
 import { App } from './app';
-import { Navbar } from './navbar/navbar';
+import { AppShell } from './layout/app-shell/app-shell';
+import { IconComponent } from './shared/icon/icon.component';
+import { ToastContainerComponent } from './shared/notification/toast-container.component';
+import { ConfirmDialogComponent } from './shared/confirm/confirm-dialog.component';
 import { Stagiaires } from './stagiaires/stagiaires';
 import { Stages } from './stages/stages';
-
 import { Encadrants } from './encadrants/encadrants';
 import { Departements } from './departements/departements';
-import { HTTP_INTERCEPTORS, HttpClientModule } from '@angular/common/http';
 import { Dashboard } from './dashboard/dashboard';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { NewStage } from './new-stage/new-stage';
 import { NewDeapartement } from './new-deapartement/new-deapartement';
 import { NewEncadrant } from './new-encadrant/new-encadrant';
@@ -21,11 +27,12 @@ import { EditEncadrant } from './edit-encadrant/edit-encadrant';
 import { EditStage } from './edit-stage/edit-stage';
 import { EditStagiaire } from './edit-stagiaire/edit-stagiaire';
 
-
 @NgModule({
   declarations: [
     App,
-    Navbar,
+    AppShell,
+    ToastContainerComponent,
+    ConfirmDialogComponent,
     Stagiaires,
     Stages,
     Encadrants,
@@ -39,20 +46,19 @@ import { EditStagiaire } from './edit-stagiaire/edit-stagiaire';
     EditEncadrant,
     EditStage,
     EditStagiaire,
-    
-  ],
-   exports: [
-    Navbar  
   ],
   imports: [
     BrowserModule,
     AppRoutingModule,
-    HttpClientModule,
     ReactiveFormsModule,
-    FormsModule
-    
+    FormsModule,
+    IconComponent,
   ],
-
-  bootstrap: [App]
+  providers: [
+    provideBrowserGlobalErrorListeners(),
+    provideClientHydration(withEventReplay()),
+    provideHttpClient(),
+  ],
+  bootstrap: [App],
 })
-export class AppModule { }
+export class AppModule {}

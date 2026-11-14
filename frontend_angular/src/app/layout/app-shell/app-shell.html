@@ -1,0 +1,77 @@
+<div class="min-h-screen bg-slate-100">
+  <!-- Overlay mobile -->
+  <div
+    *ngIf="sidebarOpen"
+    (click)="sidebarOpen = false"
+    class="fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-sm lg:hidden"
+    aria-hidden="true"></div>
+
+  <!-- Sidebar -->
+  <aside
+    class="fixed inset-y-0 left-0 z-50 flex w-72 flex-col bg-slate-900 text-slate-300 transition-transform duration-300 ease-in-out lg:translate-x-0"
+    [class.-translate-x-full]="!sidebarOpen"
+    aria-label="Navigation principale">
+    <div class="flex h-16 items-center gap-3 border-b border-white/10 px-5">
+      <span
+        class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-lg shadow-indigo-900/40">
+        <app-icon name="building-office-2"></app-icon>
+      </span>
+      <span class="text-lg font-bold tracking-tight text-white">GestionStages</span>
+      <button
+        type="button"
+        class="btn-icon ml-auto text-slate-400 hover:bg-white/10 hover:text-white lg:hidden"
+        (click)="sidebarOpen = false"
+        aria-label="Fermer le menu">
+        <app-icon name="x-mark"></app-icon>
+      </button>
+    </div>
+
+    <nav class="flex-1 space-y-1 overflow-y-auto px-3 py-4">
+      <p class="px-3 pb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Menu</p>
+      <a
+        *ngFor="let item of navItems"
+        [routerLink]="item.route"
+        routerLinkActive="bg-indigo-600 text-white shadow-lg shadow-indigo-900/30"
+        [routerLinkActiveOptions]="{ exact: item.route === '/dashboard' }"
+        class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-300 transition-colors hover:bg-white/10 hover:text-white">
+        <app-icon [name]="item.icon" size="h-5 w-5 shrink-0"></app-icon>
+        <span>{{ item.label }}</span>
+      </a>
+    </nav>
+
+    <div class="border-t border-white/10 px-5 py-4 text-xs text-slate-500">
+      &copy; {{ year }} GestionStages
+    </div>
+  </aside>
+
+  <!-- Colonne principale -->
+  <div class="flex min-h-screen flex-col lg:pl-72">
+    <header
+      class="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-slate-200 bg-white/80 px-4 backdrop-blur-md sm:px-6">
+      <button
+        type="button"
+        class="btn-icon text-slate-600 hover:bg-slate-100 lg:hidden"
+        (click)="sidebarOpen = true"
+        aria-label="Ouvrir le menu">
+        <app-icon name="bars-3"></app-icon>
+      </button>
+
+      <h1 class="truncate text-lg font-semibold text-slate-900 sm:text-xl">{{ pageTitle }}</h1>
+
+      <div
+        class="ml-auto flex items-center gap-2 rounded-full py-1 pl-1 pr-3 ring-1 ring-slate-200">
+        <span class="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 text-indigo-700">
+          <app-icon name="user" size="h-5 w-5"></app-icon>
+        </span>
+        <span class="hidden text-sm font-medium text-slate-700 sm:block">Administrateur</span>
+      </div>
+    </header>
+
+    <main class="flex-1 p-4 sm:p-6">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>
+
+<app-toast-container></app-toast-container>
+<app-confirm-dialog></app-confirm-dialog>
