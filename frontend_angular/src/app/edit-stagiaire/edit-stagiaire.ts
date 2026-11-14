@@ -1,113 +1,138 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { finalize, forkJoin } from 'rxjs';
 import { Departement } from '../services/departement';
 import { Stage } from '../services/stage';
 import { Stagiaire } from '../services/stagiaire';
+import { DepartementModel, StageModel, StagiaireModel } from '../models/stage.model';
+import { NotificationService } from '../shared/notification/notification.service';
+import { extractApiError } from '../shared/api-error';
+
+const PHONE_PATTERN = /^(\+\d{1,3}[-. ]?)?\d{10}$/;
 
 @Component({
   selector: 'app-edit-stagiaire',
   standalone: false,
   templateUrl: './edit-stagiaire.html',
-  styleUrls: ['./edit-stagiaire.css']
+  styleUrls: ['./edit-stagiaire.css'],
 })
 export class EditStagiaire implements OnInit {
-  editStagiaireFormGroup!: FormGroup;
+  form!: FormGroup;
   stagiaireId!: number;
-  departementsList: any[] = [];
-  stagesList: any[] = [];
+  departementsList: DepartementModel[] = [];
+  stagesList: StageModel[] = [];
+  loading = false;
+  saving = false;
 
   constructor(
-    private fb: FormBuilder,
-    private route: ActivatedRoute,
-    private router: Router,
-    private departementService: Departement,
-    private stageService: Stage,
-    private stagiaireService: Stagiaire
+    private readonly fb: FormBuilder,
+    private readonly route: ActivatedRoute,
+    private readonly router: Router,
+    private readonly departementService: Departement,
+    private readonly stageService: Stage,
+    private readonly stagiaireService: Stagiaire,
+    private readonly notifications: NotificationService,
   ) {}
 
   ngOnInit(): void {
-    this.stagiaireId = +this.route.snapshot.paramMap.get('id')!;
+    this.stagiaireId = Number(this.route.snapshot.paramMap.get('id'));
 
-    this.editStagiaireFormGroup = this.fb.group({
-      nom: ['', Validators.required],
-      prenom: ['', Validators.required],
+    this.form = this.fb.group({
+      nom: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(40)]],
+      prenom: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(40)]],
       email: ['', [Validators.required, Validators.email]],
-      filiere: ['', Validators.required],
+      telephone: ['', [Validators.pattern(PHONE_PATTERN)]],
+      dateNaissance: ['', [Validators.required]],
+      sexe: ['', [Validators.required]],
+      niveau: [''],
+      filiere: ['', [Validators.required]],
       organisme: [''],
-      departement: ['', Validators.required],
-      stage: ['', Validators.required],
-      sexe: ['', Validators.required],
-      dateNaissance: ['', Validators.required]
+      adresse: ['', [Validators.maxLength(200)]],
+      departement: ['', [Validators.required]],
+      stage: ['', [Validators.required]],
     });
 
+    this.loading = true;
     forkJoin({
       departements: this.departementService.getDepartements(),
       stages: this.stageService.getStages(),
-      stagiaire: this.stagiaireService.getStagiaireById(this.stagiaireId)
-    }).subscribe({
-      next: ({ departements, stages, stagiaire }) => {
-        this.departementsList = departements;
-        this.stagesList = stages;
-
-        this.editStagiaireFormGroup.patchValue({
-          nom: stagiaire.nom,
-          prenom: stagiaire.prenom,
-          email: stagiaire.email,
-          filiere: stagiaire.filiere,
-          organisme: stagiaire.organisme,
-          departement: stagiaire.departement.id,
-          stage: stagiaire.stage.id,
-          sexe: stagiaire.sexe,
-          dateNaissance: stagiaire.dateNaissance ? stagiaire.dateNaissance.substring(0, 10) : ''
-        });
-      },
-      error: (err) => {
-        console.error('Erreur chargement données', err);
-        alert('Erreur lors du chargement des données du stagiaire');
-        this.router.navigate(['/stagiaires']);
-      }
-    });
+      stagiaire: this.stagiaireService.getStagiaireById(this.stagiaireId),
+    })
+      .pipe(finalize(() => (this.loading = false)))
+      .subscribe({
+        next: ({ departements, stages, stagiaire }) => {
+          this.departementsList = departements;
+          this.stagesList = stages;
+          this.form.patchValue({
+            nom: stagiaire.nom,
+            prenom: stagiaire.prenom,
+            email: stagiaire.email,
+            telephone: stagiaire.telephone,
+            dateNaissance: stagiaire.dateNaissance ? stagiaire.dateNaissance.substring(0, 10) : '',
+            sexe: stagiaire.sexe,
+            niveau: stagiaire.niveau,
+            filiere: stagiaire.filiere,
+            organisme: stagiaire.organisme,
+            adresse: stagiaire.adresse,
+            departement: stagiaire.departement?.id ?? '',
+            stage: stagiaire.stage?.id ?? '',
+          });
+        },
+        error: (err) => {
+          this.notifications.error(extractApiError(err));
+          this.router.navigate(['/stagiaires']);
+        },
+      });
   }
 
-  handleUpdateStagiaire() {
-    if (this.editStagiaireFormGroup.invalid) {
-      alert("Veuillez remplir tous les champs obligatoires");
+  isInvalid(field: string): boolean {
+    const control = this.form.get(field);
+    return !!control && control.invalid && (control.touched || control.dirty);
+  }
+
+  handleUpdateStagiaire(): void {
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      this.notifications.error('Veuillez corriger les champs en surbrillance.');
       return;
     }
 
-    const selectedDepartementId = this.editStagiaireFormGroup.value.departement;
-    const selectedStageId = this.editStagiaireFormGroup.value.stage;
+    const value = this.form.value;
+    const departement = this.departementsList.find((d) => d.id == value.departement);
+    const stage = this.stagesList.find((s) => s.id == value.stage);
 
-    const departementObject = this.departementsList.find(d => d.id == selectedDepartementId);
-    const stageObject = this.stagesList.find(s => s.id == selectedStageId);
-
-    if (!departementObject) {
-      alert("Département introuvable");
+    if (!departement || !stage) {
+      this.notifications.error('Département ou stage introuvable.');
       return;
     }
 
-    if (!stageObject) {
-      alert("Stage introuvable");
-      return;
-    }
-
-    const updatedStagiaire = {
-      ...this.editStagiaireFormGroup.value,
-      departement: departementObject,
-      stage: stageObject
+    const payload: StagiaireModel = {
+      id: this.stagiaireId,
+      nom: value.nom,
+      prenom: value.prenom,
+      email: value.email,
+      telephone: value.telephone,
+      dateNaissance: value.dateNaissance,
+      sexe: value.sexe,
+      niveau: value.niveau,
+      filiere: value.filiere,
+      organisme: value.organisme,
+      adresse: value.adresse,
+      departement,
+      stage,
     };
 
-    this.stagiaireService.editStagiaire(this.stagiaireId, updatedStagiaire).subscribe({
-      next: () => {
-        alert("Le stagiaire a été mis à jour avec succès");
-        this.router.navigate(['/stagiaires']);
-      },
-      error: (err) => {
-        console.error(err);
-        alert("Une erreur est survenue lors de la mise à jour");
-      }
-    });
+    this.saving = true;
+    this.stagiaireService
+      .editStagiaire(this.stagiaireId, payload)
+      .pipe(finalize(() => (this.saving = false)))
+      .subscribe({
+        next: () => {
+          this.notifications.success('Le stagiaire a été mis à jour avec succès.');
+          this.router.navigate(['/stagiaires']);
+        },
+        error: (err) => this.notifications.error(extractApiError(err)),
+      });
   }
 }

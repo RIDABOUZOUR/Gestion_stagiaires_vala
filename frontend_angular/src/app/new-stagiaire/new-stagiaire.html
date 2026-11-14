@@ -1,95 +1,109 @@
-<div class="container-fluid mt-2 px-3 px-md-4 mb-2">
-  <div class="row justify-content-center">
-    <div class="col-12 col-md-10 col-lg-8 col-xl-7">
-      <div class="card shadow-sm">
-        <div class="card-header bg-success text-white d-flex justify-content-between align-items-center py-2">
-          <h3 class="h5 mb-0">
-            <i class="bi bi-person-plus me-2"></i>Créer un nouveau stagiaire
-          </h3>
-        </div>
-
-        <div class="card-body p-3 p-md-4">
-          <form [formGroup]="newStagiaireFormGroup" (ngSubmit)="handleSaveStagiaire()">
-            <div class="row g-3">
-              <div class="col-md-6">
-                <div class="mb-3">
-                  <label class="form-label fw-bold">Nom</label>
-                  <input type="text" formControlName="nom" class="form-control" placeholder="Entrez le nom">
-                </div>
-
-                <div class="mb-3">
-                  <label class="form-label fw-bold">Prénom</label>
-                  <input type="text" formControlName="prenom" class="form-control" placeholder="Entrez le prénom">
-                </div>
-
-                <div class="mb-3">
-                  <label class="form-label fw-bold">Sexe</label>
-                  <select formControlName="sexe" class="form-select">
-                    <option value="">-- Sélectionner le sexe --</option>
-                    <option value="HOMME">Homme</option>
-                    <option value="FEMME">Femme</option>
-                  </select>
-                </div>
-
-                <div class="mb-3">
-                  <label class="form-label fw-bold">Date de naissance</label>
-                  <input type="date" formControlName="dateNaissance" class="form-control">
-                </div>
-              </div>
-
-              <div class="col-md-6">
-                <div class="mb-3">
-                  <label class="form-label fw-bold">Email</label>
-                  <input type="email" formControlName="email" class="form-control" placeholder="Entrez l'email">
-                </div>
-
-                <div class="mb-3">
-                  <label class="form-label fw-bold">Filière</label>
-                  <input type="text" formControlName="filiere" class="form-control" placeholder="Entrez la filière">
-                </div>
-
-                <div class="mb-3">
-                  <label class="form-label fw-bold">Organisme</label>
-                  <input type="text" formControlName="organisme" class="form-control" placeholder="Entrez l'organisme">
-                </div>
-
-                <div class="mb-3">
-                  <label class="form-label fw-bold">Département</label>
-                  <select formControlName="departement" class="form-select">
-                    <option value="">-- Sélectionner un département --</option>
-                    <option *ngFor="let departement of departementsList" [value]="departement.id">
-                      {{ departement.nom }}
-                    </option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <div class="row">
-              <div class="col-12">
-                <div class="mb-3">
-                  <label class="form-label fw-bold">Stage</label>
-                  <select formControlName="stage" class="form-select">
-                    <option value="">-- Sélectionner un stage --</option>
-                    <option *ngFor="let stage of stagesList" [value]="stage.id">
-                      {{ stage.sujet }} ({{ stage.dateDebut | date }} - {{ stage.dateFin | date }})
-                    </option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <div class="d-flex justify-content-between mt-4">
-              <button type="button" class="btn btn-outline-secondary" routerLink="/stagiaires">
-                <i class="bi bi-arrow-left me-1"></i> Retour
-              </button>
-              <button [disabled]="!newStagiaireFormGroup.valid" type="submit" class="btn btn-success">
-                <i class="bi bi-check-circle me-1"></i> Enregistrer
-              </button>
-            </div>
-          </form>
-        </div>
+<div class="mx-auto max-w-3xl">
+  <div class="card">
+    <div class="card-header">
+      <div class="flex items-center gap-3">
+        <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+          <app-icon name="user-plus"></app-icon>
+        </span>
+        <h2 class="text-base font-semibold text-slate-900">Nouveau stagiaire</h2>
       </div>
     </div>
+
+    <form [formGroup]="form" (ngSubmit)="handleSaveStagiaire()" class="card-body space-y-5">
+      <div class="grid gap-5 sm:grid-cols-2">
+        <div>
+          <label class="label" for="nom">Nom <span class="text-rose-500">*</span></label>
+          <input id="nom" type="text" formControlName="nom" class="input" [class.input-invalid]="isInvalid('nom')" placeholder="Entrez le nom" />
+          <p class="field-error" *ngIf="isInvalid('nom')">Le nom est obligatoire (3 à 40 caractères).</p>
+        </div>
+
+        <div>
+          <label class="label" for="prenom">Prénom <span class="text-rose-500">*</span></label>
+          <input id="prenom" type="text" formControlName="prenom" class="input" [class.input-invalid]="isInvalid('prenom')" placeholder="Entrez le prénom" />
+          <p class="field-error" *ngIf="isInvalid('prenom')">Le prénom est obligatoire (3 à 40 caractères).</p>
+        </div>
+
+        <div>
+          <label class="label" for="email">Email <span class="text-rose-500">*</span></label>
+          <input id="email" type="email" formControlName="email" class="input" [class.input-invalid]="isInvalid('email')" placeholder="prenom.nom@exemple.com" />
+          <p class="field-error" *ngIf="isInvalid('email')">Un email valide est obligatoire.</p>
+        </div>
+
+        <div>
+          <label class="label" for="telephone">Téléphone</label>
+          <input id="telephone" type="tel" formControlName="telephone" class="input" [class.input-invalid]="isInvalid('telephone')" placeholder="0612345678" />
+          <p class="field-error" *ngIf="isInvalid('telephone')">10 chiffres (indicatif international optionnel).</p>
+        </div>
+
+        <div>
+          <label class="label" for="dateNaissance">Date de naissance <span class="text-rose-500">*</span></label>
+          <input id="dateNaissance" type="date" formControlName="dateNaissance" class="input" [class.input-invalid]="isInvalid('dateNaissance')" />
+          <p class="field-error" *ngIf="isInvalid('dateNaissance')">La date de naissance est obligatoire.</p>
+        </div>
+
+        <div>
+          <label class="label" for="sexe">Sexe <span class="text-rose-500">*</span></label>
+          <select id="sexe" formControlName="sexe" class="input" [class.input-invalid]="isInvalid('sexe')">
+            <option value="">-- Sélectionner --</option>
+            <option value="HOMME">Homme</option>
+            <option value="FEMME">Femme</option>
+          </select>
+          <p class="field-error" *ngIf="isInvalid('sexe')">Le sexe est obligatoire.</p>
+        </div>
+
+        <div>
+          <label class="label" for="filiere">Filière <span class="text-rose-500">*</span></label>
+          <input id="filiere" type="text" formControlName="filiere" class="input" [class.input-invalid]="isInvalid('filiere')" placeholder="Ex. Génie informatique" />
+          <p class="field-error" *ngIf="isInvalid('filiere')">La filière est obligatoire.</p>
+        </div>
+
+        <div>
+          <label class="label" for="niveau">Niveau</label>
+          <input id="niveau" type="text" formControlName="niveau" class="input" placeholder="Ex. Master 1" />
+        </div>
+
+        <div>
+          <label class="label" for="organisme">Organisme</label>
+          <input id="organisme" type="text" formControlName="organisme" class="input" placeholder="Ex. Université de Vala" />
+        </div>
+
+        <div>
+          <label class="label" for="adresse">Adresse</label>
+          <input id="adresse" type="text" formControlName="adresse" class="input" [class.input-invalid]="isInvalid('adresse')" placeholder="Entrez l'adresse" />
+          <p class="field-error" *ngIf="isInvalid('adresse')">200 caractères maximum.</p>
+        </div>
+
+        <div>
+          <label class="label" for="departement">Département <span class="text-rose-500">*</span></label>
+          <select id="departement" formControlName="departement" class="input" [class.input-invalid]="isInvalid('departement')">
+            <option value="">-- Sélectionner un département --</option>
+            <option *ngFor="let departement of departementsList" [value]="departement.id">{{ departement.nom }}</option>
+          </select>
+          <p class="field-error" *ngIf="isInvalid('departement')">Le département est obligatoire.</p>
+        </div>
+
+        <div class="sm:col-span-2">
+          <label class="label" for="stage">Stage <span class="text-rose-500">*</span></label>
+          <select id="stage" formControlName="stage" class="input" [class.input-invalid]="isInvalid('stage')">
+            <option value="">-- Sélectionner un stage --</option>
+            <option *ngFor="let stage of stagesList" [value]="stage.id">
+              {{ stage.sujet }} ({{ stage.dateDebut | date: 'dd/MM/yyyy' }} - {{ stage.dateFin | date: 'dd/MM/yyyy' }})
+            </option>
+          </select>
+          <p class="field-error" *ngIf="isInvalid('stage')">Le stage est obligatoire.</p>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap justify-between gap-3 border-t border-slate-100 pt-5">
+        <a routerLink="/stagiaires" class="btn btn-secondary">
+          <app-icon name="arrow-left" size="h-4 w-4"></app-icon>
+          Retour
+        </a>
+        <button type="submit" class="btn btn-primary" [disabled]="saving">
+          <app-icon name="check-circle" size="h-4 w-4"></app-icon>
+          {{ saving ? 'Enregistrement…' : 'Enregistrer' }}
+        </button>
+      </div>
+    </form>
   </div>
 </div>

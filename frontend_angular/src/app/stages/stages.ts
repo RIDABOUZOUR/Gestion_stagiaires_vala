@@ -1,66 +1,106 @@
-import { HttpClient } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
-import { error } from 'console';
-import { Stage } from '../services/stage';  
 import { FormBuilder, FormGroup } from '@angular/forms';
-import { StageModel } from '../models/stage.model';  
-
-
+import { finalize } from 'rxjs';
+import { Stage } from '../services/stage';
+import { StageModel, StageStatus } from '../models/stage.model';
+import { NotificationService } from '../shared/notification/notification.service';
+import { ConfirmService } from '../shared/confirm/confirm.service';
 
 @Component({
-  selector: 'app-stages',  
+  selector: 'app-stages',
   standalone: false,
-  templateUrl: './stages.html',  
-  styleUrl: './stages.css'     
+  templateUrl: './stages.html',
+  styleUrl: './stages.css',
 })
 export class Stages implements OnInit {
+  stages: StageModel[] = [];
+  searchFormGroup!: FormGroup;
+  loading = false;
 
+  constructor(
+    private readonly stageService: Stage,
+    private readonly fb: FormBuilder,
+    private readonly notifications: NotificationService,
+    private readonly confirm: ConfirmService,
+  ) {}
 
-
-  stages : any;  
-  searchFormGroup! : FormGroup;
-  stagiaires: any;
-  constructor(private stageService:Stage, private fb:FormBuilder ){}  
-  
   ngOnInit(): void {
-    this.searchFormGroup=this.fb.group({
-       keyword:this.fb.control("")
+    this.searchFormGroup = this.fb.group({ keyword: this.fb.control('') });
+    this.loadStages();
+  }
+
+  trackById(_index: number, item: { id: number }): number {
+    return item.id;
+  }
+
+  statusClass(status: StageStatus): string {
+    switch (status) {
+      case StageStatus.EN_COURS:
+        return 'badge-green';
+      case StageStatus.TERMINE:
+        return 'badge-amber';
+      case StageStatus.ANNULE:
+        return 'badge-rose';
+      default:
+        return 'badge-slate';
+    }
+  }
+
+  statusLabel(status: StageStatus): string {
+    switch (status) {
+      case StageStatus.PLANIFIE:
+        return 'Planifié';
+      case StageStatus.EN_COURS:
+        return 'En cours';
+      case StageStatus.TERMINE:
+        return 'Terminé';
+      case StageStatus.ANNULE:
+        return 'Annulé';
+      default:
+        return status ?? '—';
+    }
+  }
+
+  loadStages(): void {
+    this.loading = true;
+    this.stageService
+      .getStages()
+      .pipe(finalize(() => (this.loading = false)))
+      .subscribe({
+        next: (data) => (this.stages = data),
+        error: () => this.notifications.error('Impossible de charger la liste des stages.'),
+      });
+  }
+
+  handleSearchStages(): void {
+    const keyword = String(this.searchFormGroup.value.keyword ?? '').trim();
+    this.loading = true;
+    this.stageService
+      .searchStages(keyword)
+      .pipe(finalize(() => (this.loading = false)))
+      .subscribe({
+        next: (data) => (this.stages = data),
+        error: () => this.notifications.error('La recherche a échoué.'),
+      });
+  }
+
+  async handleDeleteStage(stage: StageModel): Promise<void> {
+    const confirmed = await this.confirm.confirm({
+      title: 'Supprimer le stage',
+      message: `Voulez-vous vraiment supprimer le stage « ${stage.sujet} » ?`,
+      confirmLabel: 'Supprimer',
+      danger: true,
     });
-   this.stageService.getStages().subscribe({  
-    next : (data)=>{
-      this.stages=data;  
-    },
-    error:(err)=>{
-      console.log(err);
+    if (!confirmed) {
+      return;
     }
-   }); 
-   
-  }
-  
-  handleSearchStages() {  
-    let kw = this.searchFormGroup?.value.keyword;
-    this.stages=this.stageService.searchStages(kw).subscribe({  
-    next : (data)=>{
-      this.stages=data;  
-    },
-    error:(err)=>{
-      console.log(err);
-    }
-   }); 
-  }
-handleDeleteStage(stage: StageModel) {
-  if (confirm(`Voulez-vous vraiment supprimer le stage "${stage.sujet}" ?`)) {
+
     this.stageService.deleteStage(stage.id).subscribe({
       next: () => {
-        alert(`Le stage "${stage.sujet}" a été supprimé avec succès`);
-        window.location.reload(); 
+        this.stages = this.stages.filter((item) => item.id !== stage.id);
+        this.notifications.success(`Le stage « ${stage.sujet} » a été supprimé.`);
       },
-      error: (err) => {
-        console.error('Erreur suppression:', err);
-        alert(`Erreur lors de la suppression : ${err.message || 'Problème serveur'}`);
-      }
+      error: () => this.notifications.error('La suppression a échoué.'),
     });
   }
-}
-
 }

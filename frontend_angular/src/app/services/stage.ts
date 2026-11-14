@@ -5,30 +5,36 @@ import { StageModel } from '../models/stage.model';
 import { environment } from '../../environments/environment';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
-export class Stage {  
+export class Stage {
+  private readonly baseUrl = `${environment.apiUrl}/stages`;
 
-  constructor(private http:HttpClient) { }
-  
-  public getStages(): Observable<any>{  
-    return this.http.get(environment.apiUrl + "/stages")  ;
-  }
+  constructor(private readonly http: HttpClient) {}
 
-  public searchStages(keyword:string): Observable<any>{ 
-    return this.http.get(environment.apiUrl + "/stages/search?keyword="+keyword)  ;
+  getStages(): Observable<StageModel[]> {
+    return this.http.get<StageModel[]>(this.baseUrl);
   }
 
-  public addStage(stage:Stage){
-     return this.http.post(environment.apiUrl + "/stages",stage);
+  searchStages(keyword: string): Observable<StageModel[]> {
+    return this.http.get<StageModel[]>(
+      `${this.baseUrl}/search?keyword=${encodeURIComponent(keyword)}`,
+    );
   }
- public deleteStage(id: number) {  
-  return this.http.delete(environment.apiUrl + "/stages/"+id); 
+
+  getStageById(id: number): Observable<StageModel> {
+    return this.http.get<StageModel>(`${this.baseUrl}/${id}`);
   }
-public editStage(id : number, stage: StageModel){
-  return this.http.put(environment.apiUrl + "/stages/"+id,stage);
-}
-public getStageById(id : number):Observable<any>{
-  return this.http.get(environment.apiUrl + "/stages/"+id);
-}
+
+  addStage(stage: StageModel): Observable<StageModel> {
+    return this.http.post<StageModel>(this.baseUrl, stage);
+  }
+
+  editStage(id: number, stage: StageModel): Observable<StageModel> {
+    return this.http.put<StageModel>(`${this.baseUrl}/${id}`, stage);
+  }
+
+  deleteStage(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/${id}`);
+  }
 }

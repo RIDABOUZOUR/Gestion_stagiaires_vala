@@ -1,65 +1,107 @@
-<div class="container-fluid mt-4 px-3 px-md-4 mb-4">
-    <div class="card shadow-sm">
-       
-        <div
-            class="card-header bg-success text-white d-flex flex-column flex-md-row justify-content-between align-items-center gap-2 py-2">
-            <h3 class="h5 mb-0 text-center text-md-start flex-grow-1">
-                <i class="bi bi-building me-2"></i>Liste des départements
-            </h3>
-            <button class="btn btn-light btn-sm" routerLink="/new-departement">
-                <i class="bi bi-plus-circle me-1"></i> Ajouter
-            </button>
-        </div>
-
-        <div class="card-body p-0">
-            
-            <div class="p-3 border-bottom" *ngIf="searchFormGroup">
-                <form [formGroup]="searchFormGroup" (ngSubmit)="handleSearchDepartements()">
-                    <div class="input-group shadow-sm">
-                        <span class="input-group-text bg-white">
-                            <i class="bi bi-search text-muted"></i>
-                        </span>
-                        <input type="text" formControlName="keyword" class="form-control" placeholder="Rechercher...">
-                        <button class="btn btn-success" type="submit">
-                            <i class="bi bi-arrow-right"></i>
-                        </button>
-                    </div>
-                </form>
-            </div>
-
-          
-            <div class="table-responsive">
-                <table class="table table-hover mb-0 align-middle">
-                    <thead class="table-light text-nowrap">
-                        <tr>
-                            <th>ID</th>
-                            <th>Nom</th>
-                            <th>Responsable</th>
-                            <th class="text-end">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr *ngFor="let d of departements">
-                            <td>{{d.id}}</td>
-                            <td>{{d.nom}}</td>
-                            <td>{{d.responsable}}</td>
-                            <td class="text-end">
-                                <div class="btn-group btn-group-sm" role="group">
-                                    <button [routerLink]="['/edit-departement', d.id]" class="btn btn-outline-warning">
-                                        <i class="bi bi-pencil-square"></i>
-                                        <span class="d-none d-md-inline ms-1">Modif.</span>
-                                    </button>
-                                    <button (click)="handleDeleteDepartement(d)" class="btn btn-outline-danger">
-                                        <i class="bi bi-trash"></i>
-                                        <span class="d-none d-md-inline ms-1">Suppr.</span>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-
-                
-            </div>
-        </div>
+<div class="card">
+  <div class="card-header">
+    <div class="flex items-center gap-3">
+      <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+        <app-icon name="building-office"></app-icon>
+      </span>
+      <div>
+        <h2 class="text-base font-semibold text-slate-900">Départements</h2>
+        <p class="text-xs text-slate-500">{{ departements.length }} enregistrement(s)</p>
+      </div>
     </div>
+    <a routerLink="/new-departement" class="btn btn-primary">
+      <app-icon name="plus-circle" size="h-4 w-4"></app-icon>
+      Ajouter
+    </a>
+  </div>
+
+  <div class="border-b border-slate-100 p-4">
+    <form
+      [formGroup]="searchFormGroup"
+      (ngSubmit)="handleSearchDepartements()"
+      class="relative max-w-md">
+      <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+        <app-icon name="magnifying-glass" size="h-5 w-5"></app-icon>
+      </span>
+      <input
+        type="search"
+        formControlName="keyword"
+        class="input pl-10"
+        placeholder="Rechercher un département..." />
+    </form>
+  </div>
+
+  <div *ngIf="loading" class="flex items-center justify-center gap-3 p-12 text-sm text-slate-500">
+    <span class="h-5 w-5 animate-spin rounded-full border-2 border-slate-300 border-t-indigo-600"></span>
+    Chargement…
+  </div>
+
+  <div
+    *ngIf="!loading && departements.length === 0"
+    class="flex flex-col items-center gap-2 p-12 text-center">
+    <span class="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-400">
+      <app-icon name="building-office" size="h-6 w-6"></app-icon>
+    </span>
+    <p class="text-sm font-medium text-slate-700">Aucun département trouvé</p>
+    <p class="text-xs text-slate-500">Ajoutez un département ou modifiez votre recherche.</p>
+  </div>
+
+  <div *ngIf="!loading && departements.length > 0" class="hidden overflow-x-auto md:block">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Nom</th>
+          <th>Responsable</th>
+          <th class="text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let d of departements; trackBy: trackById">
+          <td class="font-medium text-slate-900">{{ d.nom }}</td>
+          <td>{{ d.responsable || '—' }}</td>
+          <td class="text-right">
+            <div class="flex justify-end gap-1">
+              <a
+                [routerLink]="['/edit-departement', d.id]"
+                class="btn-icon text-indigo-600 hover:bg-indigo-50"
+                aria-label="Modifier">
+                <app-icon name="pencil-square"></app-icon>
+              </a>
+              <button
+                type="button"
+                (click)="handleDeleteDepartement(d)"
+                class="btn-icon text-rose-600 hover:bg-rose-50"
+                aria-label="Supprimer">
+                <app-icon name="trash"></app-icon>
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <ul *ngIf="!loading && departements.length > 0" class="divide-y divide-slate-100 md:hidden">
+    <li *ngFor="let d of departements; trackBy: trackById" class="flex items-center justify-between gap-3 p-4">
+      <div class="min-w-0">
+        <p class="truncate font-semibold text-slate-900">{{ d.nom }}</p>
+        <p class="truncate text-xs text-slate-500">Responsable : {{ d.responsable || '—' }}</p>
+      </div>
+      <div class="flex shrink-0 gap-1">
+        <a
+          [routerLink]="['/edit-departement', d.id]"
+          class="btn-icon text-indigo-600 hover:bg-indigo-50"
+          aria-label="Modifier">
+          <app-icon name="pencil-square"></app-icon>
+        </a>
+        <button
+          type="button"
+          (click)="handleDeleteDepartement(d)"
+          class="btn-icon text-rose-600 hover:bg-rose-50"
+          aria-label="Supprimer">
+          <app-icon name="trash"></app-icon>
+        </button>
+      </div>
+    </li>
+  </ul>
+</div>

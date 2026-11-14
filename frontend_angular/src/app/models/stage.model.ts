@@ -7,6 +7,7 @@ export interface EncadrantModel {
 }
 
 export enum StageStatus {
+  PLANIFIE = 'PLANIFIE',
   EN_COURS = 'EN_COURS',
   TERMINE = 'TERMINE',
   ANNULE = 'ANNULE',
@@ -15,22 +16,23 @@ export enum StageStatus {
 export interface StageModel {
   id: number;
   sujet: string;
-  dateDebut: Date; 
-  dateFin: Date;   
+  dateDebut: string;
+  dateFin: string;
   status: StageStatus;
   encadrant: EncadrantModel;
 }
 
-export interface DepartementModel{
-  id:number;
-  nom:string;
-  responsable:string
+export interface DepartementModel {
+  id: number;
+  nom: string;
+  responsable: string;
 }
+
 export interface StagiaireModel {
   id: number;
   nom: string;
   prenom: string;
-  dateNaissance: Date; 
+  dateNaissance: string;
   sexe: Sexe;
   email: string;
   telephone: string;
@@ -44,5 +46,5 @@ export interface StagiaireModel {
 
 export enum Sexe {
   HOMME = 'HOMME',
-  FEMME = 'FEMME'
+  FEMME = 'FEMME',
 }

@@ -1,48 +1,76 @@
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { finalize } from 'rxjs';
 import { Departement } from '../services/departement';
+import { DepartementModel } from '../models/stage.model';
+import { NotificationService } from '../shared/notification/notification.service';
+import { extractApiError } from '../shared/api-error';
 
 @Component({
   selector: 'app-edit-departement',
+  standalone: false,
   templateUrl: './edit-departement.html',
-  standalone: false
 })
 export class EditDepartement implements OnInit {
-  departementForm!: FormGroup;
+  form!: FormGroup;
   departementId!: number;
+  loading = false;
+  saving = false;
 
   constructor(
-    private fb: FormBuilder,
-    private route: ActivatedRoute,
-    private router: Router,
-    private departementService: Departement
+    private readonly fb: FormBuilder,
+    private readonly route: ActivatedRoute,
+    private readonly router: Router,
+    private readonly departementService: Departement,
+    private readonly notifications: NotificationService,
   ) {}
 
   ngOnInit(): void {
-    this.departementId = +this.route.snapshot.paramMap.get('id')!;
-    this.departementService.getDepartementById(this.departementId).subscribe(data => {
-      this.departementForm = this.fb.group({
-        nom: [data.nom],
-        responsable: [data.responsable]
-      });
-    });
-  }
+    this.departementId = Number(this.route.snapshot.paramMap.get('id'));
 
- onUpdate() {
-  if (this.departementForm.valid) {
-    this.departementService.editDepartement(this.departementId, this.departementForm.value)
+    this.form = this.fb.group({
+      nom: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(40)]],
+      responsable: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(40)]],
+    });
+
+    this.loading = true;
+    this.departementService
+      .getDepartementById(this.departementId)
+      .pipe(finalize(() => (this.loading = false)))
       .subscribe({
-        next: () => {
-          alert("Le département a été mis à jour avec succès");
+        next: (data) => this.form.patchValue(data),
+        error: (err) => {
+          this.notifications.error(extractApiError(err));
           this.router.navigate(['/departements']);
         },
-        error: (err) => {
-          console.error(err);
-          alert("Une erreur est survenue lors de la mise à jour");
-        }
       });
   }
-}
 
+  isInvalid(field: string): boolean {
+    const control = this.form.get(field);
+    return !!control && control.invalid && (control.touched || control.dirty);
+  }
+
+  onUpdate(): void {
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      this.notifications.error('Veuillez corriger les champs en surbrillance.');
+      return;
+    }
+
+    const payload: DepartementModel = { id: this.departementId, ...this.form.value };
+
+    this.saving = true;
+    this.departementService
+      .editDepartement(this.departementId, payload)
+      .pipe(finalize(() => (this.saving = false)))
+      .subscribe({
+        next: () => {
+          this.notifications.success('Le département a été mis à jour avec succès.');
+          this.router.navigate(['/departements']);
+        },
+        error: (err) => this.notifications.error(extractApiError(err)),
+      });
+  }
 }

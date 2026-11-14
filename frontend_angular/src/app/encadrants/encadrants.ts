@@ -1,63 +1,80 @@
-import { HttpClient } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
-import { Encadrant } from '../services/encadrant';
 import { FormBuilder, FormGroup } from '@angular/forms';
+import { finalize } from 'rxjs';
+import { Encadrant } from '../services/encadrant';
 import { EncadrantModel } from '../models/stage.model';
+import { NotificationService } from '../shared/notification/notification.service';
+import { ConfirmService } from '../shared/confirm/confirm.service';
 
 @Component({
   selector: 'app-encadrants',
   standalone: false,
   templateUrl: './encadrants.html',
-  styleUrl: './encadrants.css'
+  styleUrl: './encadrants.css',
 })
 export class Encadrants implements OnInit {
+  encadrants: EncadrantModel[] = [];
+  searchFormGroup!: FormGroup;
+  loading = false;
 
-  encadrants : any;
-  searchFormGroup! : FormGroup ;
-  constructor(private encadrantService:Encadrant,private fb:FormBuilder ){}
+  constructor(
+    private readonly encadrantService: Encadrant,
+    private readonly fb: FormBuilder,
+    private readonly notifications: NotificationService,
+    private readonly confirm: ConfirmService,
+  ) {}
+
   ngOnInit(): void {
-    this.searchFormGroup=this.fb.group({
-       keyword:this.fb.control("")
+    this.searchFormGroup = this.fb.group({ keyword: this.fb.control('') });
+    this.loadEncadrants();
+  }
+
+  trackById(_index: number, item: { id: number }): number {
+    return item.id;
+  }
+
+  loadEncadrants(): void {
+    this.loading = true;
+    this.encadrantService
+      .getEncadrants()
+      .pipe(finalize(() => (this.loading = false)))
+      .subscribe({
+        next: (data) => (this.encadrants = data),
+        error: () => this.notifications.error('Impossible de charger la liste des encadrants.'),
+      });
+  }
+
+  handleSearchEncadrants(): void {
+    const keyword = String(this.searchFormGroup.value.keyword ?? '').trim();
+    this.loading = true;
+    this.encadrantService
+      .searchEncadrants(keyword)
+      .pipe(finalize(() => (this.loading = false)))
+      .subscribe({
+        next: (data) => (this.encadrants = data),
+        error: () => this.notifications.error('La recherche a échoué.'),
+      });
+  }
+
+  async handleDeleteEncadrant(encadrant: EncadrantModel): Promise<void> {
+    const confirmed = await this.confirm.confirm({
+      title: 'Supprimer l’encadrant',
+      message: `Voulez-vous vraiment supprimer « ${encadrant.prenom} ${encadrant.nom} » ?`,
+      confirmLabel: 'Supprimer',
+      danger: true,
     });
-   this.encadrantService.getEncadrants().subscribe({
-    next : (data)=>{
-      this.encadrants=data;
-    },
-    error:(err)=>{
-      console.log(err);
+    if (!confirmed) {
+      return;
     }
-   }); 
-   
-  }
-  handleSearchEncadrants() {
-    let kw = this.searchFormGroup?.value.keyword;
-    this.encadrants=this.encadrantService.searchEncadrants(kw).subscribe({
-    next : (data)=>{
-      this.encadrants=data;
-    },
-    error:(err)=>{
-      console.log(err);
-    }
-   }); 
-  }
 
-
-handleDeleteEncadrant(encadrant: EncadrantModel) {
-  if (confirm(`Voulez-vous vraiment supprimer l'encadrant "${encadrant.nom} ${encadrant.prenom}" ?`)){
     this.encadrantService.deleteEncadrant(encadrant.id).subscribe({
-      next:()=>{
-        alert(`l'encadrant "${encadrant.nom} ${encadrant.prenom}" a été supprimé avec succès`);
-        window.location.reload(); 
+      next: () => {
+        this.encadrants = this.encadrants.filter((item) => item.id !== encadrant.id);
+        this.notifications.success(
+          `L’encadrant « ${encadrant.prenom} ${encadrant.nom} » a été supprimé.`,
+        );
       },
-        error: (err) => {
-          console.error('Erreur suppression:', err);
-          alert(`Erreur lors de la suppression : ${err.message || 'Problème serveur'}`);
-        }
-    })
+      error: () => this.notifications.error('La suppression a échoué.'),
+    });
   }
-}
-
-
-
-
 }

@@ -5,30 +5,36 @@ import { StagiaireModel } from '../models/stage.model';
 import { environment } from '../../environments/environment';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class Stagiaire {
+  private readonly baseUrl = `${environment.apiUrl}/stagiaires`;
 
-  constructor(private http:HttpClient) { }
-  public getStagiaires(): Observable<any>{
-    return this.http.get(environment.apiUrl + "/stagiaires");
-  }
+  constructor(private readonly http: HttpClient) {}
 
-   public searchStagiaires(keyword:string): Observable<any>{
-    return this.http.get(environment.apiUrl + "/stagiaires/search?keyword="+keyword)
+  getStagiaires(): Observable<StagiaireModel[]> {
+    return this.http.get<StagiaireModel[]>(this.baseUrl);
   }
 
-  public addStagiaire(stagiaire:StagiaireModel){
-    return this.http.post(environment.apiUrl + "/stagiaires",stagiaire);
+  searchStagiaires(keyword: string): Observable<StagiaireModel[]> {
+    return this.http.get<StagiaireModel[]>(
+      `${this.baseUrl}/search?keyword=${encodeURIComponent(keyword)}`,
+    );
   }
 
-  public deleteStagiaire(id:number){
-    return this.http.delete(environment.apiUrl + "/stagiaires/"+id);
+  getStagiaireById(id: number): Observable<StagiaireModel> {
+    return this.http.get<StagiaireModel>(`${this.baseUrl}/${id}`);
   }
-  public editStagiaire(id:number, stagiaire: StagiaireModel){
-    return this.http.put(environment.apiUrl + "/stagiaires/"+id,stagiaire);
+
+  addStagiaire(stagiaire: StagiaireModel): Observable<StagiaireModel> {
+    return this.http.post<StagiaireModel>(this.baseUrl, stagiaire);
   }
-  public getStagiaireById(id:number): Observable<any>{
-    return this.http.get(environment.apiUrl + "/stagiaires/"+id);
+
+  editStagiaire(id: number, stagiaire: StagiaireModel): Observable<StagiaireModel> {
+    return this.http.put<StagiaireModel>(`${this.baseUrl}/${id}`, stagiaire);
   }
-} 
+
+  deleteStagiaire(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/${id}`);
+  }
+}

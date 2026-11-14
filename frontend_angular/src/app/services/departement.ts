@@ -5,30 +5,36 @@ import { DepartementModel } from '../models/stage.model';
 import { environment } from '../../environments/environment';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class Departement {
+  private readonly baseUrl = `${environment.apiUrl}/departements`;
 
-  constructor(private http: HttpClient) { }
-  
-  public getDepartements(): Observable<any> {
-    return this.http.get(environment.apiUrl + "/departements")
-  }
-  public getDepartementById(id:number): Observable<any>{
-    return this.http.get(environment.apiUrl + "/departements/"+id)
-  }
-  public searchDepartements(keyword: string): Observable<any> {
-    return this.http.get(environment.apiUrl + "/departements/search?keyword=" + keyword)
+  constructor(private readonly http: HttpClient) {}
+
+  getDepartements(): Observable<DepartementModel[]> {
+    return this.http.get<DepartementModel[]>(this.baseUrl);
   }
 
-  public addDepartement(departement:DepartementModel){
-    return this.http.post(environment.apiUrl + "/departements",departement);
+  searchDepartements(keyword: string): Observable<DepartementModel[]> {
+    return this.http.get<DepartementModel[]>(
+      `${this.baseUrl}/search?keyword=${encodeURIComponent(keyword)}`,
+    );
   }
-  public deleteDepartement(id:number){
-    return this.http.delete(environment.apiUrl + "/departements/"+id);
-  }
-  editDepartement(id: number, departement:DepartementModel ) {
-  return this.http.put(environment.apiUrl + "/departements/"+id,departement);
-}
 
+  getDepartementById(id: number): Observable<DepartementModel> {
+    return this.http.get<DepartementModel>(`${this.baseUrl}/${id}`);
+  }
+
+  addDepartement(departement: DepartementModel): Observable<DepartementModel> {
+    return this.http.post<DepartementModel>(this.baseUrl, departement);
+  }
+
+  editDepartement(id: number, departement: DepartementModel): Observable<DepartementModel> {
+    return this.http.put<DepartementModel>(`${this.baseUrl}/${id}`, departement);
+  }
+
+  deleteDepartement(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/${id}`);
+  }
 }
