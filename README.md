@@ -1,0 +1,131 @@
+# 📌 Application de Gestion des Stagiaires
+
+## 📝 Description
+Ce projet est une application web complète de **gestion des stagiaires**, développée dans le cadre de mon stage.  
+Elle permet de gérer les stagiaires, stages, départements et encadrants, avec une interface utilisateur simple et moderne.
+
+---
+
+## ⚙️ Technologies utilisées
+- **Backend** : Java 21, Spring Boot 3.5  
+- **Frontend** : Angular 20 (SSR), Bootstrap 5  
+- **Base de données** : MySQL 8  
+- **ORM** : Spring Data JPA  
+- **API** : RESTful (Spring Boot)  
+- **Conteneurisation** : Docker / Docker Compose  
+
+---
+
+## 🚀 Fonctionnalités principales
+- 🔹 Gestion des stagiaires (ajout, modification, suppression, liste)  
+- 🔹 Gestion des stages et départements  
+- 🔹 Gestion des encadrants  
+- 🔹 Recherche et filtrage des données  
+- 🔹 Communication frontend-backend via HTTPClient  
+- 🔹 Tableau de bord statistique (Chart.js)  
+
+---
+
+## 🐳 Démarrage avec Docker (recommandé)
+
+### Prérequis
+- Docker + Docker Compose v2
+
+### Étapes
+```bash
+# 1. Créer le fichier d'environnement local
+cp .env.example .env
+#    puis éditer .env et définir des mots de passe forts
+
+# 2. Construire et démarrer la stack
+docker compose up --build
+
+# 3. Accéder à l'application
+#    Frontend : http://localhost:4000
+#    Backend  : http://localhost:8080
+#    Swagger  : http://localhost:8080/swagger-ui/index.html
+```
+
+Pour arrêter :
+```bash
+docker compose down          # conserve les données MySQL
+docker compose down -v       # supprime aussi le volume de données
+```
+
+### Services
+| Service  | Image / Build          | Port par défaut | Rôle                       |
+|----------|------------------------|-----------------|----------------------------|
+| mysql    | `mysql:8.0`            | 3306            | Base de données            |
+| backend  | `./backend_spring`     | 8080            | API Spring Boot            |
+| frontend | `./frontend_angular`   | 4000            | Interface Angular (SSR)    |
+
+Les ports sont configurables via `.env` (`MYSQL_PORT`, `BACKEND_PORT`, `FRONTEND_PORT`).
+
+---
+
+## 🔧 Démarrage manuel (développement)
+
+**Backend** (nécessite un MySQL local) :
+```bash
+cd backend_spring
+./mvnw spring-boot:run
+```
+
+**Frontend** :
+```bash
+cd frontend_angular
+npm install
+npm start        # http://localhost:4200
+```
+
+---
+
+## 🔐 Configuration & sécurité
+
+Toute la configuration sensible est externalisée dans le fichier `.env` (non versionné) :
+
+| Variable | Description |
+|----------|-------------|
+| `MYSQL_ROOT_PASSWORD` | Mot de passe root MySQL |
+| `MYSQL_DATABASE` | Nom de la base |
+| `MYSQL_USER` / `MYSQL_PASSWORD` | Identifiants applicatifs |
+| `CORS_ALLOWED_ORIGINS` | Origines autorisées (séparées par des virgules) |
+| `API_URL` | URL publique du backend (injectée au build frontend) |
+
+> ℹ️ Le CORS est configuré de manière centralisée dans
+> `backend_spring/.../config/CorsConfig.java` — plus aucune origine `*` n'est autorisée.
+
+### ⚠️ À faire — rotation d'un secret compromis
+L'ancien mot de passe MySQL (`rida1234`) a été **versionné dans l'historique Git public**.
+Il doit être considéré comme **compromis** :
+
+1. Changer immédiatement le mot de passe MySQL en production.
+2. Nettoyer l'historique Git pour retirer le secret :
+   ```bash
+   # avec git-filter-repo (recommandé)
+   git filter-repo --path backend_spring/src/main/resources/application.properties --invert-paths
+   # ou cibler le mot de passe précis avec un remplacement
+   ```
+   > ⚠️ Réécrire l'historique est irréversible et nécessite un `git push --force`.
+   > Tous les collaborateurs devront re-cloner le dépôt.
+3. Faire tourner l'historique : prévenir toute personne ayant cloné le dépôt.
+
+---
+
+## 📁 Structure du projet
+```
+.
+├── docker-compose.yml          # Orchestration MySQL + Backend + Frontend
+├── .env.example                # Template des variables d'environnement
+├── .gitignore
+├── backend_spring/             # API Spring Boot
+│   ├── Dockerfile
+│   └── src/main/resources/
+│       ├── application.properties
+│       └── application-docker.properties
+└── frontend_angular/           # Interface Angular (SSR)
+    ├── Dockerfile
+    └── src/environments/       # Configuration par environnement (apiUrl)
+```
+
+---
