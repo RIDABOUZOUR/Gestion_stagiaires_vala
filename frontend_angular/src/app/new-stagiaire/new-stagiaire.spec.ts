@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
 import { NewStagiaire } from './new-stagiaire';
+import { TEST_IMPORTS, TEST_PROVIDERS } from '../shared/testing/test-utils';
 
 describe('NewStagiaire', () => {
   let component: NewStagiaire;
@@ -8,9 +8,10 @@ describe('NewStagiaire', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [NewStagiaire]
-    })
-    .compileComponents();
+      imports: TEST_IMPORTS,
+      declarations: [NewStagiaire],
+      providers: TEST_PROVIDERS,
+    }).compileComponents();
 
     fixture = TestBed.createComponent(NewStagiaire);
     component = fixture.componentInstance;

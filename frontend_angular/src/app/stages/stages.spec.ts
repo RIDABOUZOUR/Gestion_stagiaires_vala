@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
 import { Stages } from './stages';
+import { TEST_IMPORTS, TEST_PROVIDERS } from '../shared/testing/test-utils';
 
 describe('Stages', () => {
   let component: Stages;
@@ -8,9 +8,10 @@ describe('Stages', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [Stages]
-    })
-    .compileComponents();
+      imports: TEST_IMPORTS,
+      declarations: [Stages],
+      providers: TEST_PROVIDERS,
+    }).compileComponents();
 
     fixture = TestBed.createComponent(Stages);
     component = fixture.componentInstance;

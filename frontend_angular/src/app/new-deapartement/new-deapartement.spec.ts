@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
 import { NewDeapartement } from './new-deapartement';
+import { TEST_IMPORTS, TEST_PROVIDERS } from '../shared/testing/test-utils';
 
 describe('NewDeapartement', () => {
   let component: NewDeapartement;
@@ -8,9 +8,10 @@ describe('NewDeapartement', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [NewDeapartement]
-    })
-    .compileComponents();
+      imports: TEST_IMPORTS,
+      declarations: [NewDeapartement],
+      providers: TEST_PROVIDERS,
+    }).compileComponents();
 
     fixture = TestBed.createComponent(NewDeapartement);
     component = fixture.componentInstance;

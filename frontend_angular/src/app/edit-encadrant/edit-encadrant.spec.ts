@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
 import { EditEncadrant } from './edit-encadrant';
+import { TEST_IMPORTS, TEST_PROVIDERS } from '../shared/testing/test-utils';
 
 describe('EditEncadrant', () => {
   let component: EditEncadrant;
@@ -8,9 +8,10 @@ describe('EditEncadrant', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [EditEncadrant]
-    })
-    .compileComponents();
+      imports: TEST_IMPORTS,
+      declarations: [EditEncadrant],
+      providers: TEST_PROVIDERS,
+    }).compileComponents();
 
     fixture = TestBed.createComponent(EditEncadrant);
     component = fixture.componentInstance;

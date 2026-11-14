@@ -50,3 +50,7 @@ logs/
 # ===== OS =====
 .DS_Store
 Thumbs.db
+
+# ===== Navigateurs téléchargés (tests) =====
+chrome-headless-shell/
+.puppeteer/

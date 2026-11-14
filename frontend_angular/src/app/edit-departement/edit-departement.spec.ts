@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
 import { EditDepartement } from './edit-departement';
+import { TEST_IMPORTS, TEST_PROVIDERS } from '../shared/testing/test-utils';
 
 describe('EditDepartement', () => {
   let component: EditDepartement;
@@ -8,9 +8,10 @@ describe('EditDepartement', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [EditDepartement]
-    })
-    .compileComponents();
+      imports: TEST_IMPORTS,
+      declarations: [EditDepartement],
+      providers: TEST_PROVIDERS,
+    }).compileComponents();
 
     fixture = TestBed.createComponent(EditDepartement);
     component = fixture.componentInstance;
