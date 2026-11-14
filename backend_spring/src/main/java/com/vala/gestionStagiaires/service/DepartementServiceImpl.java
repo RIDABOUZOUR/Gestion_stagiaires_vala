@@ -5,12 +5,14 @@ import com.vala.gestionStagiaires.Mappers.DepartementMapper;
 import com.vala.gestionStagiaires.entities.Departement;
 import com.vala.gestionStagiaires.exceptions.ResourceNotFoundException;
 import com.vala.gestionStagiaires.repository.DepartementRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
 @Service
+@Transactional
 public class DepartementServiceImpl implements DepartementService{
     @Autowired
     private DepartementRepository departementRepository;

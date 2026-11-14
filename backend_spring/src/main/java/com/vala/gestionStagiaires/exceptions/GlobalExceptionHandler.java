@@ -3,6 +3,7 @@ package com.vala.gestionStagiaires.exceptions;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -28,6 +29,12 @@ public class GlobalExceptionHandler {
             errors.put(fieldError.getField(), fieldError.getDefaultMessage());
         }
         return build(HttpStatus.BAD_REQUEST, "Erreur de validation", errors);
+    }
+
+    /** Corps de requête illisible / JSON malformé (ex. date invalide) → HTTP 400. */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<Map<String, Object>> handleUnreadable(HttpMessageNotReadableException ex) {
+        return build(HttpStatus.BAD_REQUEST, "Corps de requête illisible ou format invalide.", null);
     }
 
     /** Ressource inexistante → HTTP 404. */

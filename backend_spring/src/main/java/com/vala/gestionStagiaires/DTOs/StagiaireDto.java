@@ -9,7 +9,7 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
-import java.util.Date;
+import java.time.LocalDate;
 
 
 @Data
@@ -23,7 +23,7 @@ public class StagiaireDto {
     private String prenom;
 
     @Past(message = "La date de naissance doit être dans le passé")
-    private Date dateNaissance;
+    private LocalDate dateNaissance;
 
     @NotNull(message = "Le sexe doit être spécifié")
     private Sexe sexe;
@@ -39,6 +39,7 @@ public class StagiaireDto {
 
     private String organisme;
 
+    @NotNull(message = "Le stage est obligatoire")
     @Valid
     private StageDto stage;
 
@@ -46,6 +47,7 @@ public class StagiaireDto {
 
     private String filiere;
 
+    @NotNull(message = "Le département est obligatoire")
     @Valid
     private DepartementDto departement;
 

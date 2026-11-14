@@ -8,7 +8,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
-import java.util.Date;
+import java.time.LocalDate;
 
 
 @Data
@@ -20,13 +20,14 @@ public class StageDto {
     private String sujet;
 
     @NotNull(message = "La date de début est obligatoire")
-    private Date dateDebut;
+    private LocalDate dateDebut;
 
     @NotNull(message = "La date de fin est obligatoire")
-    private Date dateFin;
+    private LocalDate dateFin;
 
     private StageStatus status;
 
+    @NotNull(message = "L'encadrant est obligatoire")
     @Valid
     private EncadrantDto encadrant;
 
@@ -34,7 +35,7 @@ public class StageDto {
     @AssertTrue(message = "La date de début doit être antérieure à la date de fin")
     public boolean isDateDebutBeforeDateFin() {
         if (dateDebut == null || dateFin == null) return true;
-        return dateDebut.before(dateFin);
+        return dateDebut.isBefore(dateFin);
     }
 
 }

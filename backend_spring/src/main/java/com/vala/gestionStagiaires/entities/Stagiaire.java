@@ -4,7 +4,7 @@ import com.vala.gestionStagiaires.enums.Sexe;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.util.Date;
+import java.time.LocalDate;
 
 @Entity
 @AllArgsConstructor
@@ -21,8 +21,7 @@ public class Stagiaire {
 
     private String prenom;
 
-    @Temporal(TemporalType.DATE)
-    private Date dateNaissance;
+    private LocalDate dateNaissance;
 
     @Enumerated(EnumType.STRING)
     private Sexe sexe;
@@ -33,20 +32,17 @@ public class Stagiaire {
 
     private String adresse;
 
-
     private String organisme;
 
-    @ManyToOne
-    @JoinColumn
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "stage_id")
     private Stage stage;
 
     private String niveau;
 
     private String filiere;
 
-    @ManyToOne
-    @JoinColumn
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "departement_id")
     private Departement departement;
-
-
 }

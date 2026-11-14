@@ -3,6 +3,7 @@ package com.vala.gestionStagiaires.entities;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -21,6 +22,7 @@ public class Departement {
 
     private String responsable;
 
-    @OneToMany
-    private List<Stagiaire> stagiaires;
+    @OneToMany(mappedBy = "departement", fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<Stagiaire> stagiaires = new ArrayList<>();
 }

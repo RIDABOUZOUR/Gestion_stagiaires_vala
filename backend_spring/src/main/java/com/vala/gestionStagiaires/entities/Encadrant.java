@@ -1,11 +1,10 @@
 package com.vala.gestionStagiaires.entities;
 
-
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.util.Collection;
-
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @AllArgsConstructor
@@ -17,6 +16,7 @@ public class Encadrant {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     private String nom;
 
     private String prenom;
@@ -25,10 +25,7 @@ public class Encadrant {
 
     private String telephone;
 
-    @OneToMany(mappedBy = "encadrant")
-    private Collection<Stage> stages;
-
-
-
-
+    @OneToMany(mappedBy = "encadrant", fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<Stage> stages = new ArrayList<>();
 }

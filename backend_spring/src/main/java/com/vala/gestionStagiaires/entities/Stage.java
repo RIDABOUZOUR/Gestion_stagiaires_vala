@@ -1,11 +1,11 @@
 package com.vala.gestionStagiaires.entities;
 
-
 import com.vala.gestionStagiaires.enums.StageStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.util.Date;
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -19,24 +19,22 @@ public class Stage {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true)
     private String sujet;
 
-    @Temporal(TemporalType.DATE)
-    private Date dateDebut;
+    @Column(name = "date_debut")
+    private LocalDate dateDebut;
 
-    @Temporal(TemporalType.DATE)
-    private Date dateFin;
+    @Column(name = "date_fin")
+    private LocalDate dateFin;
 
     @Enumerated(EnumType.STRING)
     private StageStatus status;
 
-    @OneToMany(mappedBy = "stage")
-    private List<Stagiaire> stagiaire;
+    @OneToMany(mappedBy = "stage", fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<Stagiaire> stagiaires = new ArrayList<>();
 
-
-    @ManyToOne
-    @JoinColumn
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "encadrant_id")
     private Encadrant encadrant;
-
 }

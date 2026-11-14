@@ -10,6 +10,6 @@ public interface StageMapper {
 
     StageDto fromStage(Stage stage);
 
-    @Mapping(target = "stagiaire", ignore = true)
+    @Mapping(target = "stagiaires", ignore = true)
     Stage fromStageDto(StageDto stageDto);
 }
