@@ -10,7 +10,19 @@ import { join } from 'node:path';
 const browserDistFolder = join(import.meta.dirname, '../browser');
 
 const app = express();
-const angularApp = new AngularNodeAppEngine();
+
+/**
+ * Hôtes autorisés pour le rendu SSR (protection anti-SSRF d'Angular).
+ * Configurable via ALLOWED_HOSTS (liste séparée par des virgules). Par défaut,
+ * seuls le développement local sont autorisés : en production, renseigner le
+ * domaine public, sinon Angular retombe sur un rendu côté client.
+ */
+const allowedHosts = (process.env['ALLOWED_HOSTS'] ?? 'localhost,127.0.0.1')
+  .split(',')
+  .map((host) => host.trim())
+  .filter((host) => host.length > 0);
+
+const angularApp = new AngularNodeAppEngine({ allowedHosts });
 
 // Derrière un reverse-proxy (docker-compose, ingress…), faire confiance au
 // premier hop permet à Express de résoudre correctement l'IP cliente et le

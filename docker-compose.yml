@@ -65,6 +65,8 @@ services:
       PORT: 4000
       # Origine autorisée par la CSP (connect-src) — doit correspondre à API_URL.
       API_ORIGIN: ${API_URL:-http://localhost:8080}
+      # Hôtes autorisés pour le rendu SSR (protection anti-SSRF d'Angular).
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1}
     ports:
       - "${FRONTEND_PORT:-4000}:4000"
     networks:
