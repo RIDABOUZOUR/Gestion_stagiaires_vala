@@ -119,25 +119,11 @@ Toute la configuration sensible est externalisée dans le fichier `.env` (non ve
 | `MYSQL_USER` / `MYSQL_PASSWORD` | Identifiants applicatifs |
 | `CORS_ALLOWED_ORIGINS` | Origines autorisées (séparées par des virgules) |
 | `API_URL` | URL publique du backend (injectée au build frontend) |
+| `ALLOWED_HOSTS` | Hôtes autorisés pour le rendu SSR (séparés par des virgules) |
 | `LOG_LEVEL_ASPECT` | Niveau des logs de l'aspect AOP (`INFO` ou `DEBUG`) |
 
 > ℹ️ Le CORS est configuré de manière centralisée dans
 > `backend_spring/.../config/CorsConfig.java` — plus aucune origine `*` n'est autorisée.
-
-### ⚠️ À faire — rotation d'un secret compromis
-L'ancien mot de passe MySQL (`rida1234`) a été **versionné dans l'historique Git public**.
-Il doit être considéré comme **compromis** :
-
-1. Changer immédiatement le mot de passe MySQL en production.
-2. Nettoyer l'historique Git pour retirer le secret :
-   ```bash
-   # avec git-filter-repo (recommandé)
-   git filter-repo --path backend_spring/src/main/resources/application.properties --invert-paths
-   # ou cibler le mot de passe précis avec un remplacement
-   ```
-   > ⚠️ Réécrire l'historique est irréversible et nécessite un `git push --force`.
-   > Tous les collaborateurs devront re-cloner le dépôt.
-3. Faire tourner l'historique : prévenir toute personne ayant cloné le dépôt.
 
 ---
 
