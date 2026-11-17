@@ -9,4 +9,8 @@ import java.util.List;
 public interface EncadrantRepository extends JpaRepository<Encadrant,Long> {
     List<Encadrant> findByNomIgnoreCaseContainingOrPrenomIgnoreCaseContaining(String nomKeyword, String prenomKeyword);
 
+    boolean existsByEmailIgnoreCase(String email);
+
+    boolean existsByEmailIgnoreCaseAndIdNot(String email, Long id);
+
 }

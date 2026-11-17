@@ -4,6 +4,7 @@ import com.vala.gestionStagiaires.DTOs.DepartementDto;
 import com.vala.gestionStagiaires.DTOs.StageDto;
 import com.vala.gestionStagiaires.DTOs.StagiaireDto;
 import com.vala.gestionStagiaires.Mappers.StagiaireMapper;
+import com.vala.gestionStagiaires.config.ReglesMetierProperties;
 import com.vala.gestionStagiaires.entities.Departement;
 import com.vala.gestionStagiaires.entities.Stage;
 import com.vala.gestionStagiaires.entities.Stagiaire;
@@ -15,13 +16,14 @@ import com.vala.gestionStagiaires.exceptions.StagiaireNotFoundException;
 import com.vala.gestionStagiaires.repository.DepartementRepository;
 import com.vala.gestionStagiaires.repository.StageRepository;
 import com.vala.gestionStagiaires.repository.StagiaireRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -49,8 +51,13 @@ class StagiaireServiceImplTest {
     @Mock
     private DepartementRepository departementRepository;
 
-    @InjectMocks
     private StagiaireServiceImpl stagiaireService;
+
+    @BeforeEach
+    void setUp() {
+        stagiaireService = new StagiaireServiceImpl(stagiaireRepository, stageRepository, departementRepository,
+                mapper, new ReglesMetierProperties(16, 0));
+    }
 
     private StagiaireDto dto(Long id, String nom, String prenom) {
         StagiaireDto d = new StagiaireDto();
@@ -297,5 +304,71 @@ class StagiaireServiceImplTest {
 
         assertThat(stagiaireService.getStagiairesParEncadrant())
                 .containsEntry("Martin Paul", 4L);
+    }
+
+    @Test
+    @DisplayName("addStagiare() refuse un email déjà utilisé")
+    void addStagiare_shouldRefuseDuplicateEmail() {
+        StagiaireDto input = dto(null, "Rida", "Bouzour");
+        input.setEmail("rida@example.com");
+        when(stagiaireRepository.existsByEmailIgnoreCase("rida@example.com")).thenReturn(true);
+
+        assertThatThrownBy(() -> stagiaireService.addStagiare(input))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessageContaining("rida@example.com");
+        verify(stagiaireRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("updateStagiaire() refuse l'email d'un autre stagiaire")
+    void updateStagiaire_shouldRefuseEmailOfAnotherStagiaire() {
+        StagiaireDto input = dto(null, "Rida", "Bouzour");
+        input.setEmail("autre@example.com");
+        when(stagiaireRepository.findById(1L)).thenReturn(Optional.of(entity(1L, "Rida", "Bouzour")));
+        when(stagiaireRepository.existsByEmailIgnoreCaseAndIdNot("autre@example.com", 1L)).thenReturn(true);
+
+        assertThatThrownBy(() -> stagiaireService.updateStagiaire(input, 1L))
+                .isInstanceOf(BusinessRuleException.class);
+        verify(stagiaireRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("addStagiare() refuse un stagiaire trop jeune au début du stage")
+    void addStagiare_shouldRefuseTooYoung() {
+        Stage stage = Stage.builder().id(1L).status(StageStatus.PLANIFIE)
+                .dateDebut(LocalDate.of(2026, 9, 1)).build();
+        StagiaireDto input = dto(null, "Rida", "Bouzour");
+        input.setStage(stageRef(1L));
+        input.setDepartement(departementRef(1L));
+        Stagiaire toSave = entity(null, "Rida", "Bouzour");
+        toSave.setDateNaissance(LocalDate.of(2010, 9, 2)); // 15 ans au 01/09/2026
+        when(mapper.fromStagiaireDto(input)).thenReturn(toSave);
+        when(stageRepository.findById(1L)).thenReturn(Optional.of(stage));
+        when(departementRepository.findById(1L)).thenReturn(Optional.of(departement));
+
+        assertThatThrownBy(() -> stagiaireService.addStagiare(input))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessageContaining("16 ans");
+        verify(stagiaireRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("addStagiare() accepte un stagiaire qui a exactement l'âge minimum")
+    void addStagiare_shouldAcceptExactMinimumAge() {
+        Stage stage = Stage.builder().id(1L).status(StageStatus.PLANIFIE)
+                .dateDebut(LocalDate.of(2026, 9, 1)).build();
+        StagiaireDto input = dto(null, "Rida", "Bouzour");
+        input.setStage(stageRef(1L));
+        input.setDepartement(departementRef(1L));
+        Stagiaire toSave = entity(null, "Rida", "Bouzour");
+        toSave.setDateNaissance(LocalDate.of(2010, 9, 1)); // 16 ans pile
+        when(mapper.fromStagiaireDto(input)).thenReturn(toSave);
+        when(stageRepository.findById(1L)).thenReturn(Optional.of(stage));
+        when(departementRepository.findById(1L)).thenReturn(Optional.of(departement));
+        when(stagiaireRepository.save(toSave)).thenReturn(toSave);
+
+        stagiaireService.addStagiare(input);
+
+        verify(stagiaireRepository).save(toSave);
     }
 }

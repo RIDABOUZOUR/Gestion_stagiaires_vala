@@ -9,6 +9,10 @@ import java.util.List;
 public interface StagiaireRepository extends JpaRepository<Stagiaire,Long> {
     List<Stagiaire> findByNomIgnoreCaseContainingOrPrenomIgnoreCaseContaining(String nomKeyword, String prenomKeyword);
 
+    boolean existsByEmailIgnoreCase(String email);
+
+    boolean existsByEmailIgnoreCaseAndIdNot(String email, Long id);
+
     /** Un stage a-t-il encore des stagiaires ? (bloque sa suppression) */
     boolean existsByStageId(Long stageId);
 

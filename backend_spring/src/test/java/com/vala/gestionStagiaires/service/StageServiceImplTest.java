@@ -3,6 +3,7 @@ package com.vala.gestionStagiaires.service;
 import com.vala.gestionStagiaires.DTOs.EncadrantDto;
 import com.vala.gestionStagiaires.DTOs.StageDto;
 import com.vala.gestionStagiaires.Mappers.StageMapper;
+import com.vala.gestionStagiaires.config.ReglesMetierProperties;
 import com.vala.gestionStagiaires.entities.Encadrant;
 import com.vala.gestionStagiaires.entities.Stage;
 import com.vala.gestionStagiaires.enums.StageStatus;
@@ -56,12 +57,20 @@ class StageServiceImplTest {
 
     private StageServiceImpl stageService;
 
+    private Clock clock;
+
     private final Encadrant encadrant = Encadrant.builder().id(1L).nom("Martin").build();
 
     @BeforeEach
     void setUp() {
-        Clock clock = Clock.fixed(TODAY.atStartOfDay(ZoneId.systemDefault()).toInstant(), ZoneId.systemDefault());
-        stageService = new StageServiceImpl(stageRepository, encadrantRepository, stagiaireRepository, stageMapper, clock);
+        clock = Clock.fixed(TODAY.atStartOfDay(ZoneId.systemDefault()).toInstant(), ZoneId.systemDefault());
+        stageService = serviceAvecCapacite(0);
+    }
+
+    /** Service configuré avec une capacité maximale par encadrant (0 = illimitée). */
+    private StageServiceImpl serviceAvecCapacite(int maxStagesEnCours) {
+        return new StageServiceImpl(stageRepository, encadrantRepository, stagiaireRepository, stageMapper,
+                clock, new ReglesMetierProperties(16, maxStagesEnCours));
     }
 
     private static EncadrantDto encadrantDto(Long id) {
@@ -374,5 +383,69 @@ class StageServiceImplTest {
         assertThatThrownBy(() -> stageService.getStageById(99L))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining("99");
+    }
+
+    @Nested
+    @DisplayName("Capacité des encadrants")
+    class CapaciteEncadrant {
+
+        @Test
+        @DisplayName("addStage() refuse un stage EN_COURS si l'encadrant est au maximum")
+        void addStage_shouldRefuseWhenEncadrantFull() {
+            StageServiceImpl service = serviceAvecCapacite(2);
+            StageDto input = stageDto(null, "Stage IA", StageStatus.EN_COURS);
+            when(stageMapper.fromStageDto(input)).thenReturn(stageEntity(null, "Stage IA", null));
+            when(encadrantRepository.findById(1L)).thenReturn(Optional.of(encadrant));
+            when(stageRepository.countByEncadrantIdAndStatus(1L, StageStatus.EN_COURS)).thenReturn(2L);
+
+            assertThatThrownBy(() -> service.addStage(input))
+                    .isInstanceOf(BusinessRuleException.class)
+                    .hasMessageContaining("maximum : 2");
+            verify(stageRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("addStage() accepte un stage EN_COURS sous la limite")
+        void addStage_shouldAcceptUnderLimit() {
+            StageServiceImpl service = serviceAvecCapacite(2);
+            StageDto input = stageDto(null, "Stage IA", StageStatus.EN_COURS);
+            Stage toSave = stageEntity(null, "Stage IA", null);
+            when(stageMapper.fromStageDto(input)).thenReturn(toSave);
+            when(encadrantRepository.findById(1L)).thenReturn(Optional.of(encadrant));
+            when(stageRepository.countByEncadrantIdAndStatus(1L, StageStatus.EN_COURS)).thenReturn(1L);
+            when(stageRepository.save(toSave)).thenReturn(toSave);
+
+            service.addStage(input);
+
+            verify(stageRepository).save(toSave);
+        }
+
+        @Test
+        @DisplayName("changerStatut() vers EN_COURS exclut le stage lui-même du décompte")
+        void changerStatut_shouldRefuseWhenEncadrantFull() {
+            StageServiceImpl service = serviceAvecCapacite(1);
+            Stage stage = stageEntity(1L, "Sujet", StageStatus.PLANIFIE);
+            stage.setEncadrant(encadrant);
+            when(stageRepository.findById(1L)).thenReturn(Optional.of(stage));
+            when(stageRepository.countByEncadrantIdAndStatusAndIdNot(1L, StageStatus.EN_COURS, 1L)).thenReturn(1L);
+
+            assertThatThrownBy(() -> service.changerStatut(1L, StageStatus.EN_COURS))
+                    .isInstanceOf(BusinessRuleException.class);
+            assertThat(stage.getStatus()).isEqualTo(StageStatus.PLANIFIE);
+        }
+
+        @Test
+        @DisplayName("aucune limite quand la capacité vaut 0")
+        void shouldNotCountWhenUnlimited() {
+            StageDto input = stageDto(null, "Stage IA", StageStatus.EN_COURS);
+            Stage toSave = stageEntity(null, "Stage IA", null);
+            when(stageMapper.fromStageDto(input)).thenReturn(toSave);
+            when(encadrantRepository.findById(1L)).thenReturn(Optional.of(encadrant));
+            when(stageRepository.save(toSave)).thenReturn(toSave);
+
+            stageService.addStage(input);
+
+            verify(stageRepository, never()).countByEncadrantIdAndStatus(any(), any());
+        }
     }
 }

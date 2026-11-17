@@ -4,6 +4,7 @@ import com.vala.gestionStagiaires.DTOs.DepartementDto;
 import com.vala.gestionStagiaires.DTOs.StageDto;
 import com.vala.gestionStagiaires.DTOs.StagiaireDto;
 import com.vala.gestionStagiaires.Mappers.StagiaireMapper;
+import com.vala.gestionStagiaires.config.ReglesMetierProperties;
 import com.vala.gestionStagiaires.entities.Departement;
 import com.vala.gestionStagiaires.entities.Stage;
 import com.vala.gestionStagiaires.entities.Stagiaire;
@@ -17,6 +18,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.Period;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +34,7 @@ public class StagiaireServiceImpl implements StagiaireService {
     private final StageRepository stageRepository;
     private final DepartementRepository departementRepository;
     private final StagiaireMapper mapper;
+    private final ReglesMetierProperties regles;
 
     @Override
     @Transactional(readOnly = true)
@@ -42,10 +46,12 @@ public class StagiaireServiceImpl implements StagiaireService {
 
     @Override
     public StagiaireDto addStagiare(StagiaireDto stagiaireDto) {
+        verifierEmailDisponible(stagiaireDto.getEmail(), null);
         Stagiaire stagiaire = mapper.fromStagiaireDto(stagiaireDto);
         stagiaire.setId(null);
         stagiaire.setStage(findStageAffectable(stagiaireDto.getStage()));
         stagiaire.setDepartement(findDepartement(stagiaireDto.getDepartement()));
+        verifierAgeMinimum(stagiaire.getDateNaissance(), stagiaire.getStage());
         return mapper.fromStagiaire(stagiaireRepository.save(stagiaire));
     }
 
@@ -61,6 +67,7 @@ public class StagiaireServiceImpl implements StagiaireService {
     public StagiaireDto updateStagiaire(StagiaireDto updatedStagiare, Long id) {
         Stagiaire existingStagiaire = stagiaireRepository.findById(id)
                 .orElseThrow(() -> new StagiaireNotFoundException(id));
+        verifierEmailDisponible(updatedStagiare.getEmail(), id);
 
         existingStagiaire.setDateNaissance(updatedStagiare.getDateNaissance());
         existingStagiaire.setTelephone(updatedStagiare.getTelephone());
@@ -81,6 +88,7 @@ public class StagiaireServiceImpl implements StagiaireService {
         if (!Objects.equals(ancienStageId, nouveauStageId)) {
             existingStagiaire.setStage(findStageAffectable(updatedStagiare.getStage()));
         }
+        verifierAgeMinimum(existingStagiaire.getDateNaissance(), existingStagiaire.getStage());
 
         return mapper.fromStagiaire(stagiaireRepository.save(existingStagiaire));
     }
@@ -155,6 +163,32 @@ public class StagiaireServiceImpl implements StagiaireService {
                     "Impossible d'affecter un stagiaire à un stage " + stage.getStatus() + ".");
         }
         return stage;
+    }
+
+    /** Deux stagiaires ne peuvent pas partager le même email (insensible à la casse). */
+    private void verifierEmailDisponible(String email, Long idCourant) {
+        if (email == null || email.isBlank()) {
+            return;
+        }
+        boolean pris = idCourant == null
+                ? stagiaireRepository.existsByEmailIgnoreCase(email)
+                : stagiaireRepository.existsByEmailIgnoreCaseAndIdNot(email, idCourant);
+        if (pris) {
+            throw new BusinessRuleException("Un stagiaire utilise déjà l'email " + email + ".");
+        }
+    }
+
+    /** Le stagiaire doit avoir l'âge minimum requis à la date de début de son stage. */
+    private void verifierAgeMinimum(LocalDate dateNaissance, Stage stage) {
+        int ageMinimum = regles.ageMinimum();
+        if (ageMinimum <= 0 || dateNaissance == null || stage == null || stage.getDateDebut() == null) {
+            return;
+        }
+        int age = Period.between(dateNaissance, stage.getDateDebut()).getYears();
+        if (age < ageMinimum) {
+            throw new BusinessRuleException("Le stagiaire doit avoir au moins " + ageMinimum
+                    + " ans au début du stage (il aura " + age + " ans).");
+        }
     }
 
     private Departement findDepartement(DepartementDto departementDto) {

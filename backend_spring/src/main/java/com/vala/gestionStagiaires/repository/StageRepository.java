@@ -13,6 +13,11 @@ public interface StageRepository extends JpaRepository<Stage,Long> {
     /** Un encadrant a-t-il encore des stages ? (bloque sa suppression) */
     boolean existsByEncadrantId(Long encadrantId);
 
+    /** Charge d'un encadrant : nombre de ses stages dans un statut donné. */
+    long countByEncadrantIdAndStatus(Long encadrantId, StageStatus status);
+
+    long countByEncadrantIdAndStatusAndIdNot(Long encadrantId, StageStatus status, Long excludedStageId);
+
     /** Stages planifiés dont la date de début est atteinte. */
     List<Stage> findByStatusAndDateDebutLessThanEqual(StageStatus status, LocalDate date);
 

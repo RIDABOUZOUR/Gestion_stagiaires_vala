@@ -21,6 +21,7 @@ public class Encadrant {
 
     private String prenom;
 
+    @Column(unique = true)
     private String email;
 
     private String telephone;

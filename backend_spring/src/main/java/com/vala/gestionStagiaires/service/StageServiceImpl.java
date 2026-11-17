@@ -3,6 +3,7 @@ package com.vala.gestionStagiaires.service;
 import com.vala.gestionStagiaires.DTOs.EncadrantDto;
 import com.vala.gestionStagiaires.DTOs.StageDto;
 import com.vala.gestionStagiaires.Mappers.StageMapper;
+import com.vala.gestionStagiaires.config.ReglesMetierProperties;
 import com.vala.gestionStagiaires.entities.Encadrant;
 import com.vala.gestionStagiaires.entities.Stage;
 import com.vala.gestionStagiaires.enums.StageStatus;
@@ -30,6 +31,7 @@ public class StageServiceImpl implements StageService {
     private final StagiaireRepository stagiaireRepository;
     private final StageMapper stageMapper;
     private final Clock clock;
+    private final ReglesMetierProperties regles;
 
     @Override
     @Transactional(readOnly = true)
@@ -47,6 +49,7 @@ public class StageServiceImpl implements StageService {
 
         StageStatus status = stageDto.getStatus() != null ? stageDto.getStatus() : StageStatus.PLANIFIE;
         verifierCoherenceDates(status, stage.getDateDebut(), stage.getDateFin());
+        verifierCapaciteEncadrant(stage.getEncadrant(), status, null);
         stage.setStatus(status);
 
         return stageMapper.fromStage(stageRepository.save(stage));
@@ -80,8 +83,11 @@ public class StageServiceImpl implements StageService {
         verifierTransition(existingStage.getStatus(), cible);
         verifierCoherenceDates(cible, stageDto.getDateDebut(), stageDto.getDateFin());
 
+        Encadrant encadrant = findEncadrant(stageDto.getEncadrant());
+        verifierCapaciteEncadrant(encadrant, cible, id);
+
         existingStage.setSujet(stageDto.getSujet());
-        existingStage.setEncadrant(findEncadrant(stageDto.getEncadrant()));
+        existingStage.setEncadrant(encadrant);
         existingStage.setDateDebut(stageDto.getDateDebut());
         existingStage.setDateFin(stageDto.getDateFin());
         existingStage.setStatus(cible);
@@ -99,6 +105,9 @@ public class StageServiceImpl implements StageService {
         Stage stage = findStage(id);
         verifierTransition(stage.getStatus(), cible);
         verifierCoherenceDates(cible, stage.getDateDebut(), stage.getDateFin());
+        if (stage.getStatus() != cible) {
+            verifierCapaciteEncadrant(stage.getEncadrant(), cible, id);
+        }
         stage.setStatus(cible);
         return stageMapper.fromStage(stageRepository.save(stage));
     }
@@ -146,6 +155,25 @@ public class StageServiceImpl implements StageService {
         if (status == StageStatus.TERMINE && dateFin != null && dateFin.isAfter(today)) {
             throw new BusinessRuleException(
                     "Un stage ne peut pas être terminé avant sa date de fin.");
+        }
+    }
+
+    /**
+     * Limite le nombre de stages EN_COURS par encadrant (si configuré).
+     * La mise à jour automatique nocturne n'applique pas cette limite : elle
+     * ne fait que constater l'avancement du calendrier.
+     */
+    private void verifierCapaciteEncadrant(Encadrant encadrant, StageStatus status, Long stageId) {
+        int max = regles.maxStagesEnCoursParEncadrant();
+        if (max <= 0 || status != StageStatus.EN_COURS || encadrant == null || encadrant.getId() == null) {
+            return;
+        }
+        long enCours = stageId == null
+                ? stageRepository.countByEncadrantIdAndStatus(encadrant.getId(), StageStatus.EN_COURS)
+                : stageRepository.countByEncadrantIdAndStatusAndIdNot(encadrant.getId(), StageStatus.EN_COURS, stageId);
+        if (enCours >= max) {
+            throw new BusinessRuleException("Cet encadrant suit déjà " + enCours
+                    + " stage(s) en cours (maximum : " + max + ").");
         }
     }
 

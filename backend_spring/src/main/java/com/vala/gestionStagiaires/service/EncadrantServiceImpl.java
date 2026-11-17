@@ -34,7 +34,9 @@ public class EncadrantServiceImpl implements EncadrantService {
 
     @Override
     public EncadrantDto addEncadrant(EncadrantDto encadrantDto) {
+        verifierEmailDisponible(encadrantDto.getEmail(), null);
         Encadrant encadrant = encadrantMapper.fromEncadrantDto(encadrantDto);
+        encadrant.setId(null);
         return encadrantMapper.fromEncadrant(encadrantRepository.save(encadrant));
     }
 
@@ -65,6 +67,7 @@ public class EncadrantServiceImpl implements EncadrantService {
     public EncadrantDto updateEncadrant(EncadrantDto encadrantDto, Long id) {
         Encadrant existingEncadrant = encadrantRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Encadrant", id));
+        verifierEmailDisponible(encadrantDto.getEmail(), id);
         existingEncadrant.setNom(encadrantDto.getNom());
         existingEncadrant.setPrenom(encadrantDto.getPrenom());
         existingEncadrant.setTelephone(encadrantDto.getTelephone());
@@ -79,4 +82,16 @@ public class EncadrantServiceImpl implements EncadrantService {
                 .orElseThrow(() -> new ResourceNotFoundException("Encadrant", id)));
     }
 
+    /** Deux encadrants ne peuvent pas partager le même email (insensible à la casse). */
+    private void verifierEmailDisponible(String email, Long idCourant) {
+        if (email == null || email.isBlank()) {
+            return;
+        }
+        boolean pris = idCourant == null
+                ? encadrantRepository.existsByEmailIgnoreCase(email)
+                : encadrantRepository.existsByEmailIgnoreCaseAndIdNot(email, idCourant);
+        if (pris) {
+            throw new BusinessRuleException("Un encadrant utilise déjà l'email " + email + ".");
+        }
+    }
 }

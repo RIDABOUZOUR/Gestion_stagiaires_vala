@@ -171,4 +171,28 @@ class EncadrantServiceImplTest {
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining("99");
     }
+
+    @Test
+    @DisplayName("addEncadrant() refuse un email déjà utilisé")
+    void addEncadrant_shouldRefuseDuplicateEmail() {
+        EncadrantDto input = dto(null, "Martin", "Paul", "paul@test.com", "0612345678");
+        when(encadrantRepository.existsByEmailIgnoreCase("paul@test.com")).thenReturn(true);
+
+        assertThatThrownBy(() -> encadrantService.addEncadrant(input))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessageContaining("paul@test.com");
+        verify(encadrantRepository, never()).save(org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    @DisplayName("updateEncadrant() refuse l'email d'un autre encadrant")
+    void updateEncadrant_shouldRefuseEmailOfAnotherEncadrant() {
+        EncadrantDto input = dto(null, "Martin", "Paul", "pris@test.com", "0612345678");
+        when(encadrantRepository.findById(1L))
+                .thenReturn(Optional.of(entity(1L, "Martin", "Paul", "old@test.com", "0611111111")));
+        when(encadrantRepository.existsByEmailIgnoreCaseAndIdNot("pris@test.com", 1L)).thenReturn(true);
+
+        assertThatThrownBy(() -> encadrantService.updateEncadrant(input, 1L))
+                .isInstanceOf(BusinessRuleException.class);
+    }
 }

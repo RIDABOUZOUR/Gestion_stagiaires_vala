@@ -26,6 +26,7 @@ public class Stagiaire {
     @Enumerated(EnumType.STRING)
     private Sexe sexe;
 
+    @Column(unique = true)
     private String email;
 
     private String telephone;
