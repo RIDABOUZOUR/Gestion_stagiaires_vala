@@ -11,6 +11,7 @@ import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -29,12 +30,14 @@ public class EvaluationController {
     private final AttestationService attestationService;
 
     @PutMapping("/stagiaires/{id}/evaluation")
+    @PreAuthorize("@securite.peutAccederStagiaire(#id)")
     public ResponseEntity<EvaluationDto> enregistrerEvaluation(@PathVariable Long id,
                                                                @Valid @RequestBody EvaluationRequest request) {
         return ResponseEntity.ok(evaluationService.enregistrer(id, request));
     }
 
     @GetMapping("/stagiaires/{id}/evaluation")
+    @PreAuthorize("@securite.peutAccederStagiaire(#id)")
     public ResponseEntity<EvaluationDto> getEvaluation(@PathVariable Long id) {
         return ResponseEntity.ok(evaluationService.getEvaluation(id));
     }

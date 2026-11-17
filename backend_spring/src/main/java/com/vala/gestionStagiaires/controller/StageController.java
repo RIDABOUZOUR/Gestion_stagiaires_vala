@@ -5,6 +5,7 @@ import com.vala.gestionStagiaires.DTOs.StageDto;
 import com.vala.gestionStagiaires.DTOs.StageFiltre;
 import com.vala.gestionStagiaires.DTOs.suivi.StageHistoriqueDto;
 import com.vala.gestionStagiaires.enums.StageStatus;
+import com.vala.gestionStagiaires.securite.SecuriteService;
 import com.vala.gestionStagiaires.service.StageService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +14,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.data.web.SortDefault;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,9 +25,17 @@ public class StageController {
     @Autowired
     private StageService stageService;
 
+    @Autowired
+    private SecuriteService securite;
+
+    private static final Sort TRI_PAR_DEBUT = Sort.by(Sort.Direction.DESC, "dateDebut");
+
     @GetMapping("/stages")
     public ResponseEntity<List<StageDto>> getStages(){
-        return ResponseEntity.ok(stageService.getStages());
+        // Un encadrant ne voit que ses stages.
+        return securite.encadrantRestreint()
+                .map(enc -> ResponseEntity.ok(stagesDe(new StageFiltre(null, null, enc))))
+                .orElseGet(() -> ResponseEntity.ok(stageService.getStages()));
     }
 
     @PostMapping("/stages")
@@ -44,12 +54,15 @@ public class StageController {
             @RequestParam(required = false) StageStatus status,
             @RequestParam(required = false) Long encadrantId,
             @PageableDefault(size = 20) @SortDefault(sort = "dateDebut", direction = Sort.Direction.DESC) Pageable pageable) {
-        return ResponseEntity.ok(stageService.rechercherStages(new StageFiltre(keyword, status, encadrantId), pageable));
+        Long encadrant = securite.encadrantRestreint().orElse(encadrantId);
+        return ResponseEntity.ok(stageService.rechercherStages(new StageFiltre(keyword, status, encadrant), pageable));
     }
 
     @GetMapping("/stages/search")
     public ResponseEntity<List<StageDto>> searchStage(@RequestParam(name = "keyword",defaultValue = "") String keyword){
-        return ResponseEntity.ok(stageService.searchStage(keyword));
+        return securite.encadrantRestreint()
+                .map(enc -> ResponseEntity.ok(stagesDe(new StageFiltre(keyword, null, enc))))
+                .orElseGet(() -> ResponseEntity.ok(stageService.searchStage(keyword)));
     }
 
     @DeleteMapping("/stages/{id}")
@@ -64,6 +77,7 @@ public class StageController {
     }
 
     @GetMapping("/stages/{id}")
+    @PreAuthorize("@securite.peutAccederStage(#id)")
     public ResponseEntity<StageDto> getStageById(@PathVariable Long id){
         return ResponseEntity.ok(stageService.getStageById(id));
     }
@@ -73,6 +87,7 @@ public class StageController {
     // ------------------------------------------------------------------
 
     @GetMapping("/stages/{id}/historique")
+    @PreAuthorize("@securite.peutAccederStage(#id)")
     public ResponseEntity<List<StageHistoriqueDto>> getHistorique(@PathVariable Long id) {
         return ResponseEntity.ok(stageService.getHistorique(id));
     }
@@ -90,5 +105,9 @@ public class StageController {
     @PatchMapping("/stages/{id}/annuler")
     public ResponseEntity<StageDto> annulerStage(@PathVariable Long id) {
         return ResponseEntity.ok(stageService.changerStatut(id, StageStatus.ANNULE));
+    }
+
+    private List<StageDto> stagesDe(StageFiltre filtre) {
+        return stageService.rechercherStages(filtre, Pageable.unpaged(TRI_PAR_DEBUT)).content();
     }
 }

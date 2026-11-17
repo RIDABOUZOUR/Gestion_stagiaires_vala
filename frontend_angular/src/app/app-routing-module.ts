@@ -13,22 +13,36 @@ import { EditDepartement } from './edit-departement/edit-departement';
 import { EditEncadrant } from './edit-encadrant/edit-encadrant';
 import { EditStage } from './edit-stage/edit-stage';
 import { EditStagiaire } from './edit-stagiaire/edit-stagiaire';
+import { Login } from './login/login';
+import { Role } from './models/auth.model';
+import { accueilGuard, authGuard, invitesGuard } from './shared/auth/auth.guards';
+
+/** Création, modification et tableau de bord : réservés à la gestion (ADMIN, RH). */
+const GESTION: Role[] = ['ADMIN', 'RH'];
 
 const routes: Routes = [
-  { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
-  { path: 'dashboard', component: Dashboard, data: { title: 'Tableau de bord' } },
-  { path: 'stagiaires', component: Stagiaires, data: { title: 'Stagiaires' } },
-  { path: 'stages', component: Stages, data: { title: 'Stages' } },
-  { path: 'encadrants', component: Encadrants, data: { title: 'Encadrants' } },
-  { path: 'departements', component: Departements, data: { title: 'Départements' } },
-  { path: 'new-stage', component: NewStage, data: { title: 'Nouveau stage' } },
-  { path: 'new-departement', component: NewDeapartement, data: { title: 'Nouveau département' } },
-  { path: 'new-encadrant', component: NewEncadrant, data: { title: 'Nouvel encadrant' } },
-  { path: 'new-stagiaire', component: NewStagiaire, data: { title: 'Nouveau stagiaire' } },
-  { path: 'edit-departement/:id', component: EditDepartement, data: { title: 'Modifier un département' } },
-  { path: 'edit-encadrant/:id', component: EditEncadrant, data: { title: 'Modifier un encadrant' } },
-  { path: 'edit-stage/:id', component: EditStage, data: { title: 'Modifier un stage' } },
-  { path: 'edit-stagiaire/:id', component: EditStagiaire, data: { title: 'Modifier un stagiaire' } },
+  { path: 'login', component: Login, canActivate: [invitesGuard], data: { title: 'Connexion' } },
+  { path: '', pathMatch: 'full', canActivate: [accueilGuard], children: [] },
+  {
+    path: '',
+    canActivate: [authGuard],
+    children: [
+      { path: 'dashboard', component: Dashboard, canActivate: [authGuard], data: { title: 'Tableau de bord', roles: GESTION } },
+      { path: 'stagiaires', component: Stagiaires, data: { title: 'Stagiaires' } },
+      { path: 'stages', component: Stages, data: { title: 'Stages' } },
+      { path: 'encadrants', component: Encadrants, data: { title: 'Encadrants' } },
+      { path: 'departements', component: Departements, data: { title: 'Départements' } },
+      { path: 'new-stage', component: NewStage, canActivate: [authGuard], data: { title: 'Nouveau stage', roles: GESTION } },
+      { path: 'new-departement', component: NewDeapartement, canActivate: [authGuard], data: { title: 'Nouveau département', roles: GESTION } },
+      { path: 'new-encadrant', component: NewEncadrant, canActivate: [authGuard], data: { title: 'Nouvel encadrant', roles: GESTION } },
+      { path: 'new-stagiaire', component: NewStagiaire, canActivate: [authGuard], data: { title: 'Nouveau stagiaire', roles: GESTION } },
+      { path: 'edit-departement/:id', component: EditDepartement, canActivate: [authGuard], data: { title: 'Modifier un département', roles: GESTION } },
+      { path: 'edit-encadrant/:id', component: EditEncadrant, canActivate: [authGuard], data: { title: 'Modifier un encadrant', roles: GESTION } },
+      { path: 'edit-stage/:id', component: EditStage, canActivate: [authGuard], data: { title: 'Modifier un stage', roles: GESTION } },
+      { path: 'edit-stagiaire/:id', component: EditStagiaire, canActivate: [authGuard], data: { title: 'Modifier un stagiaire', roles: GESTION } },
+    ],
+  },
+  { path: '**', redirectTo: '' },
 ];
 
 @NgModule({

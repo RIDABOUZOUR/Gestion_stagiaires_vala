@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -29,6 +30,7 @@ public class SuiviController {
     // ---- Présences -----------------------------------------------------
 
     @PutMapping("/stagiaires/{id}/presences/{date}")
+    @PreAuthorize("@securite.peutAccederStagiaire(#id)")
     public ResponseEntity<PresenceDto> enregistrerPresence(
             @PathVariable Long id,
             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
@@ -37,6 +39,7 @@ public class SuiviController {
     }
 
     @GetMapping("/stagiaires/{id}/presences")
+    @PreAuthorize("@securite.peutAccederStagiaire(#id)")
     public ResponseEntity<List<PresenceDto>> listerPresences(
             @PathVariable Long id,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate du,
@@ -45,6 +48,7 @@ public class SuiviController {
     }
 
     @DeleteMapping("/stagiaires/{id}/presences/{date}")
+    @PreAuthorize("@securite.peutAccederStagiaire(#id)")
     public ResponseEntity<Void> supprimerPresence(
             @PathVariable Long id,
             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
@@ -55,32 +59,38 @@ public class SuiviController {
     // ---- Rapports hebdomadaires ---------------------------------------
 
     @PostMapping("/stagiaires/{id}/rapports")
+    @PreAuthorize("@securite.peutAccederStagiaire(#id)")
     public ResponseEntity<RapportDto> deposerRapport(@PathVariable Long id, @Valid @RequestBody RapportRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(rapportService.deposer(id, request));
     }
 
     @GetMapping("/stagiaires/{id}/rapports")
+    @PreAuthorize("@securite.peutAccederStagiaire(#id)")
     public ResponseEntity<List<RapportDto>> listerRapports(@PathVariable Long id) {
         return ResponseEntity.ok(rapportService.lister(id));
     }
 
     @GetMapping("/rapports/{id}")
+    @PreAuthorize("@securite.peutAccederRapport(#id)")
     public ResponseEntity<RapportDto> getRapport(@PathVariable Long id) {
         return ResponseEntity.ok(rapportService.getRapport(id));
     }
 
     @PutMapping("/rapports/{id}")
+    @PreAuthorize("@securite.peutAccederRapport(#id)")
     public ResponseEntity<RapportDto> modifierRapport(@PathVariable Long id, @Valid @RequestBody RapportRequest request) {
         return ResponseEntity.ok(rapportService.modifier(id, request));
     }
 
     @PatchMapping("/rapports/{id}/valider")
+    @PreAuthorize("@securite.peutAccederRapport(#id)")
     public ResponseEntity<RapportDto> validerRapport(
             @PathVariable Long id, @Valid @RequestBody(required = false) CommentaireRequest request) {
         return ResponseEntity.ok(rapportService.valider(id, request != null ? request.commentaire() : null));
     }
 
     @PatchMapping("/rapports/{id}/a-revoir")
+    @PreAuthorize("@securite.peutAccederRapport(#id)")
     public ResponseEntity<RapportDto> demanderRevision(@PathVariable Long id, @Valid @RequestBody RevisionRequest request) {
         return ResponseEntity.ok(rapportService.demanderRevision(id, request.commentaire()));
     }

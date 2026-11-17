@@ -28,7 +28,8 @@ public class CorsConfig implements WebMvcConfigurer {
                 .allowedHeaders("*")
                 // Lisibles par le front : nom du fichier téléchargé et numéro d'attestation.
                 .exposedHeaders("Content-Disposition", "X-Attestation-Numero")
-                .allowCredentials(true)
+                // Authentification par en-tête Authorization : aucun cookie à transmettre.
+                .allowCredentials(false)
                 .maxAge(3600);
     }
 }

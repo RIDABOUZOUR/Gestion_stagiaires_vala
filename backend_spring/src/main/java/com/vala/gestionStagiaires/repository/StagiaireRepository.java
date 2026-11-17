@@ -36,6 +36,9 @@ public interface StagiaireRepository extends JpaRepository<Stagiaire,Long>, JpaS
     @EntityGraph(attributePaths = {"stage.encadrant", "departement"})
     List<Stagiaire> findByStageStatus(StageStatus status);
 
+    /** Ce stagiaire est-il suivi par cet encadrant (via son stage) ? */
+    boolean existsByIdAndStageEncadrantId(Long id, Long encadrantId);
+
     boolean existsByEmailIgnoreCase(String email);
 
     boolean existsByEmailIgnoreCaseAndIdNot(String email, Long id);

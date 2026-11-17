@@ -5,6 +5,7 @@ import org.springframework.data.mapping.PropertyReferenceException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -49,6 +50,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(PropertyReferenceException.class)
     public ResponseEntity<Map<String, Object>> handlePropertyReference(PropertyReferenceException ex) {
         return build(HttpStatus.BAD_REQUEST, "Tri invalide : propriété inconnue « " + ex.getPropertyName() + " ».", null);
+    }
+
+    /** Identifiants de connexion incorrects → HTTP 401 (message volontairement générique). */
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<Map<String, Object>> handleBadCredentials(BadCredentialsException ex) {
+        return build(HttpStatus.UNAUTHORIZED, ex.getMessage(), null);
     }
 
     /** Ressource inexistante → HTTP 404. */

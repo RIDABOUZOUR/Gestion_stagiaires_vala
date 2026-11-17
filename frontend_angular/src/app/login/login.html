@@ -1,0 +1,58 @@
+<div class="flex min-h-screen items-center justify-center bg-slate-100 px-4 py-12">
+  <div class="w-full max-w-md">
+    <div class="mb-8 flex flex-col items-center gap-3 text-center">
+      <span class="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-lg shadow-indigo-900/30">
+        <app-icon name="building-office-2" size="h-6 w-6"></app-icon>
+      </span>
+      <h1 class="text-2xl font-bold tracking-tight text-slate-900">GestionStages</h1>
+      <p class="text-sm text-slate-500">Connectez-vous pour accéder à l'application.</p>
+    </div>
+
+    <div class="card">
+      <form [formGroup]="form" (ngSubmit)="seConnecter()" class="card-body space-y-5" novalidate>
+        <p
+          *ngIf="sessionExpiree"
+          class="rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800 ring-1 ring-amber-200"
+          role="status">
+          Votre session a expiré. Reconnectez-vous.
+        </p>
+        <p
+          *ngIf="erreur"
+          class="rounded-lg bg-rose-50 px-4 py-3 text-sm text-rose-700 ring-1 ring-rose-200"
+          role="alert">
+          {{ erreur }}
+        </p>
+
+        <div>
+          <label class="label" for="email">Email</label>
+          <input
+            id="email"
+            type="email"
+            formControlName="email"
+            class="input"
+            autocomplete="username"
+            [class.input-invalid]="isInvalid('email')"
+            placeholder="prenom.nom@exemple.com" />
+          <p class="field-error" *ngIf="isInvalid('email')">Un email valide est obligatoire.</p>
+        </div>
+
+        <div>
+          <label class="label" for="motDePasse">Mot de passe</label>
+          <input
+            id="motDePasse"
+            type="password"
+            formControlName="motDePasse"
+            class="input"
+            autocomplete="current-password"
+            [class.input-invalid]="isInvalid('motDePasse')" />
+          <p class="field-error" *ngIf="isInvalid('motDePasse')">Le mot de passe est obligatoire.</p>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-full justify-center" [disabled]="enCours">
+          <app-icon name="arrow-right-on-rectangle" size="h-5 w-5"></app-icon>
+          {{ enCours ? 'Connexion…' : 'Se connecter' }}
+        </button>
+      </form>
+    </div>
+  </div>
+</div>

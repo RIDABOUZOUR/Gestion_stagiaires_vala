@@ -34,6 +34,9 @@ class EncadrantServiceImplTest {
     private StageRepository stageRepository;
 
     @Mock
+    private com.vala.gestionStagiaires.repository.UtilisateurRepository utilisateurRepository;
+
+    @Mock
     private EncadrantMapper encadrantMapper;
 
     @InjectMocks
@@ -194,5 +197,18 @@ class EncadrantServiceImplTest {
 
         assertThatThrownBy(() -> encadrantService.updateEncadrant(input, 1L))
                 .isInstanceOf(BusinessRuleException.class);
+    }
+
+    @Test
+    @DisplayName("deleteEncadrant() refuse la suppression d'un encadrant qui a un compte utilisateur")
+    void deleteEncadrant_shouldRefuseWhenUserAccountLinked() {
+        when(encadrantRepository.existsById(5L)).thenReturn(true);
+        when(stageRepository.existsByEncadrantId(5L)).thenReturn(false);
+        when(utilisateurRepository.existsByEncadrantId(5L)).thenReturn(true);
+
+        assertThatThrownBy(() -> encadrantService.deleteEncadrant(5L))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessageContaining("compte utilisateur");
+        verify(encadrantRepository, never()).deleteById(5L);
     }
 }

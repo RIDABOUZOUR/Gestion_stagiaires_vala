@@ -1,4 +1,9 @@
-<div class="min-h-screen bg-slate-100">
+<!-- Page de connexion (ou session absente) : sans menu ni en-tête -->
+<ng-template #pageSeule>
+  <router-outlet></router-outlet>
+</ng-template>
+
+<div *ngIf="auth.estConnecte(); else pageSeule" class="min-h-screen bg-slate-100">
   <!-- Overlay mobile -->
   <div
     *ngIf="sidebarOpen"
@@ -29,7 +34,7 @@
     <nav class="flex-1 space-y-1 overflow-y-auto px-3 py-4">
       <p class="px-3 pb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Menu</p>
       <a
-        *ngFor="let item of navItems"
+        *ngFor="let item of navVisibles"
         [routerLink]="item.route"
         routerLinkActive="bg-indigo-600 text-white shadow-lg shadow-indigo-900/30"
         [routerLinkActiveOptions]="{ exact: item.route === '/dashboard' }"
@@ -58,12 +63,24 @@
 
       <h1 class="truncate text-lg font-semibold text-slate-900 sm:text-xl">{{ pageTitle }}</h1>
 
-      <div
-        class="ml-auto flex items-center gap-2 rounded-full py-1 pl-1 pr-3 ring-1 ring-slate-200">
-        <span class="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 text-indigo-700">
-          <app-icon name="user" size="h-5 w-5"></app-icon>
-        </span>
-        <span class="hidden text-sm font-medium text-slate-700 sm:block">Administrateur</span>
+      <div class="ml-auto flex items-center gap-2">
+        <div class="flex items-center gap-2 rounded-full py-1 pl-1 pr-3 ring-1 ring-slate-200">
+          <span class="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 text-indigo-700">
+            <app-icon name="user" size="h-5 w-5"></app-icon>
+          </span>
+          <span class="hidden flex-col leading-tight sm:flex">
+            <span class="text-sm font-medium text-slate-700">{{ auth.utilisateur()?.email }}</span>
+            <span class="text-xs text-slate-500">{{ libelleRole }}</span>
+          </span>
+        </div>
+        <button
+          type="button"
+          class="btn-icon text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+          (click)="seDeconnecter()"
+          title="Se déconnecter"
+          aria-label="Se déconnecter">
+          <app-icon name="arrow-right-on-rectangle" size="h-5 w-5"></app-icon>
+        </button>
       </div>
     </header>
 

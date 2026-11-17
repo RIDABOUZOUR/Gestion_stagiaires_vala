@@ -16,6 +16,9 @@ public interface RapportHebdomadaireRepository extends JpaRepository<RapportHebd
 
     boolean existsByStagiaireIdAndSemaine(Long stagiaireId, LocalDate semaine);
 
+    /** Ce rapport concerne-t-il un stagiaire suivi par cet encadrant ? */
+    boolean existsByIdAndStagiaireStageEncadrantId(Long id, Long encadrantId);
+
     /** Semaine du dernier rapport de chaque stagiaire dont le stage est dans le statut donné. */
     @Query("SELECT new com.vala.gestionStagiaires.repository.projection.DernierRapport(r.stagiaire.id, MAX(r.semaine)) "
             + "FROM RapportHebdomadaire r WHERE r.stagiaire.stage.status = :status GROUP BY r.stagiaire.id")

@@ -19,6 +19,7 @@ import com.vala.gestionStagiaires.repository.StageHistoriqueRepository;
 import com.vala.gestionStagiaires.repository.StageRepository;
 import com.vala.gestionStagiaires.repository.StagiaireRepository;
 import com.vala.gestionStagiaires.repository.specification.StageSpecifications;
+import com.vala.gestionStagiaires.securite.SecuriteService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -238,6 +239,7 @@ public class StageServiceImpl implements StageService {
                 .nouveauStatut(nouveau)
                 .dateChangement(Instant.now(clock))
                 .origine(origine)
+                .auteur(origine == OrigineChangement.MANUEL ? SecuriteService.utilisateurCourant() : null)
                 .build();
     }
 

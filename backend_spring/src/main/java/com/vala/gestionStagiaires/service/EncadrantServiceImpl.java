@@ -6,6 +6,7 @@ import com.vala.gestionStagiaires.entities.Encadrant;
 import com.vala.gestionStagiaires.exceptions.ResourceNotFoundException;
 import com.vala.gestionStagiaires.repository.EncadrantRepository;
 import com.vala.gestionStagiaires.exceptions.BusinessRuleException;
+import com.vala.gestionStagiaires.repository.UtilisateurRepository;
 import com.vala.gestionStagiaires.repository.StageRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -19,6 +20,7 @@ public class EncadrantServiceImpl implements EncadrantService {
     private final EncadrantRepository encadrantRepository;
     private final StageRepository stageRepository;
     private final EncadrantMapper encadrantMapper;
+    private final UtilisateurRepository utilisateurRepository;
     @Override
     @Transactional(readOnly = true)
     public List<EncadrantDto> getEncadrant() {
@@ -50,6 +52,9 @@ public class EncadrantServiceImpl implements EncadrantService {
         }
         if (stageRepository.existsByEncadrantId(id)) {
             throw new BusinessRuleException("Impossible de supprimer cet encadrant : il encadre encore des stages.");
+        }
+        if (utilisateurRepository.existsByEncadrantId(id)) {
+            throw new BusinessRuleException("Impossible de supprimer cet encadrant : un compte utilisateur lui est lié.");
         }
         encadrantRepository.deleteById(id);
     }

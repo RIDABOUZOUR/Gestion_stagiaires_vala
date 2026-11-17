@@ -50,6 +50,10 @@ class StagiaireControllerTest {
     @Mock
     private StagiaireService stagiaireService;
 
+    /** Par défaut (Optional vide) : utilisateur non restreint, comme un RH. */
+    @Mock
+    private com.vala.gestionStagiaires.securite.SecuriteService securite;
+
     @InjectMocks
     private StagiaireController stagiaireController;
 
@@ -218,5 +222,23 @@ class StagiaireControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Paramètre invalide : status."));
         verifyNoInteractions(stagiaireService);
+    }
+
+    @Test
+    @DisplayName("encadrant connecté : listes et recherche paginée limitées à ses stagiaires")
+    void encadrant_shouldForceSonFiltre() throws Exception {
+        when(securite.encadrantRestreint()).thenReturn(java.util.Optional.of(9L));
+        when(stagiaireService.rechercherStagiaires(any(StagiaireFiltre.class), any(Pageable.class)))
+                .thenReturn(new PageResponse<>(List.of(dto(1L, "Rida", "Bouzour")), 0, 1, 1, 1));
+
+        mockMvc.perform(get("/stagiaires")).andExpect(status().isOk()).andExpect(jsonPath("$[0].nom").value("Rida"));
+        mockMvc.perform(get("/stagiaires/page").param("keyword", "rid")).andExpect(status().isOk());
+
+        ArgumentCaptor<StagiaireFiltre> filtres = ArgumentCaptor.forClass(StagiaireFiltre.class);
+        verify(stagiaireService, org.mockito.Mockito.times(2)).rechercherStagiaires(filtres.capture(), any(Pageable.class));
+        org.assertj.core.api.Assertions.assertThat(filtres.getAllValues()).extracting(StagiaireFiltre::encadrantId)
+                .containsOnly(9L);
+        org.assertj.core.api.Assertions.assertThat(filtres.getAllValues().get(1).keyword()).isEqualTo("rid");
+        verify(stagiaireService, org.mockito.Mockito.never()).getAllStagiares();
     }
 }

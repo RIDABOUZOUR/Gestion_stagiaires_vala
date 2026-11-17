@@ -48,6 +48,10 @@ class StageControllerTest {
     @Mock
     private StageService stageService;
 
+    /** Par défaut (Optional vide) : utilisateur non restreint, comme un RH. */
+    @Mock
+    private com.vala.gestionStagiaires.securite.SecuriteService securite;
+
     @InjectMocks
     private StageController stageController;
 
@@ -236,5 +240,19 @@ class StageControllerTest {
                 .isEqualTo(new StageFiltre("ia", StageStatus.EN_COURS, 3L));
         org.assertj.core.api.Assertions.assertThat(pageable.getValue().getSort())
                 .isEqualTo(Sort.by(Sort.Direction.DESC, "dateDebut"));
+    }
+
+    @Test
+    @DisplayName("encadrant connecté : son identifiant remplace le filtre encadrantId demandé")
+    void encadrant_shouldForceSonFiltre() throws Exception {
+        when(securite.encadrantRestreint()).thenReturn(java.util.Optional.of(9L));
+        when(stageService.rechercherStages(any(StageFiltre.class), any(Pageable.class)))
+                .thenReturn(new PageResponse<>(List.of(), 0, 20, 0, 0));
+
+        mockMvc.perform(get("/stages/page").param("encadrantId", "3")).andExpect(status().isOk());
+
+        ArgumentCaptor<StageFiltre> filtre = ArgumentCaptor.forClass(StageFiltre.class);
+        verify(stageService).rechercherStages(filtre.capture(), any(Pageable.class));
+        org.assertj.core.api.Assertions.assertThat(filtre.getValue().encadrantId()).isEqualTo(9L);
     }
 }

@@ -4,7 +4,7 @@ import {
   provideClientHydration,
   withEventReplay,
 } from '@angular/platform-browser';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { AppRoutingModule } from './app-routing-module';
@@ -26,6 +26,8 @@ import { EditDepartement } from './edit-departement/edit-departement';
 import { EditEncadrant } from './edit-encadrant/edit-encadrant';
 import { EditStage } from './edit-stage/edit-stage';
 import { EditStagiaire } from './edit-stagiaire/edit-stagiaire';
+import { Login } from './login/login';
+import { authInterceptor } from './shared/auth/auth.interceptor';
 
 @NgModule({
   declarations: [
@@ -46,6 +48,7 @@ import { EditStagiaire } from './edit-stagiaire/edit-stagiaire';
     EditEncadrant,
     EditStage,
     EditStagiaire,
+    Login,
   ],
   imports: [
     BrowserModule,
@@ -57,7 +60,7 @@ import { EditStagiaire } from './edit-stagiaire/edit-stagiaire';
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideClientHydration(withEventReplay()),
-    provideHttpClient(),
+    provideHttpClient(withInterceptors([authInterceptor])),
   ],
   bootstrap: [App],
 })

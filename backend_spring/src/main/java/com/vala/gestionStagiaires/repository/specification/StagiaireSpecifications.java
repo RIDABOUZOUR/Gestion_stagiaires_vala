@@ -41,6 +41,9 @@ public final class StagiaireSpecifications {
             if (hasText(filtre.organisme())) {
                 predicats.add(cb.equal(cb.lower(root.get("organisme")), filtre.organisme().trim().toLowerCase()));
             }
+            if (filtre.encadrantId() != null) {
+                predicats.add(cb.equal(root.get("stage").get("encadrant").get("id"), filtre.encadrantId()));
+            }
             return cb.and(predicats.toArray(Predicate[]::new));
         };
     }

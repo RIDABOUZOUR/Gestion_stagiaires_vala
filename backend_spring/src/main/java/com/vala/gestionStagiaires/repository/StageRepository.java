@@ -29,6 +29,8 @@ public interface StageRepository extends JpaRepository<Stage,Long>, JpaSpecifica
     @EntityGraph(attributePaths = "encadrant")
     List<Stage> findBySujetIgnoreCaseContaining(String nomKeyword);
 
+    boolean existsByIdAndEncadrantId(Long id, Long encadrantId);
+
     /** Un encadrant a-t-il encore des stages ? (bloque sa suppression) */
     boolean existsByEncadrantId(Long encadrantId);
 

@@ -5,13 +5,16 @@ import com.vala.gestionStagiaires.DTOs.StagiaireDto;
 import com.vala.gestionStagiaires.DTOs.StagiaireFiltre;
 import com.vala.gestionStagiaires.enums.StageStatus;
 import com.vala.gestionStagiaires.exceptions.StagiaireNotFoundException;
+import com.vala.gestionStagiaires.securite.SecuriteService;
 import com.vala.gestionStagiaires.service.StagiaireService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.data.web.SortDefault;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.http.ResponseEntity;
 
 import org.springframework.web.bind.annotation.*;
@@ -23,9 +26,17 @@ public class StagiaireController {
     @Autowired
     StagiaireService stagiaireService;
 
+    @Autowired
+    SecuriteService securite;
+
+    private static final Sort TRI_PAR_NOM = Sort.by("nom", "prenom");
+
     @GetMapping("/stagiaires")
     public ResponseEntity<List<StagiaireDto>> getAllStagiaires(){
-        return ResponseEntity.ok(stagiaireService.getAllStagiares());
+        // Un encadrant ne voit que ses stagiaires.
+        return securite.encadrantRestreint()
+                .map(enc -> ResponseEntity.ok(stagiairesDe(new StagiaireFiltre(null, null, null, null, null, enc))))
+                .orElseGet(() -> ResponseEntity.ok(stagiaireService.getAllStagiares()));
     }
 
     /**
@@ -40,18 +51,22 @@ public class StagiaireController {
             @RequestParam(required = false) StageStatus status,
             @RequestParam(required = false) String organisme,
             @PageableDefault(size = 20) @SortDefault(sort = {"nom", "prenom"}) Pageable pageable) {
-        StagiaireFiltre filtre = new StagiaireFiltre(keyword, departementId, stageId, status, organisme);
+        StagiaireFiltre demande = new StagiaireFiltre(keyword, departementId, stageId, status, organisme);
+        StagiaireFiltre filtre = securite.encadrantRestreint().map(demande::pourEncadrant).orElse(demande);
         return ResponseEntity.ok(stagiaireService.rechercherStagiaires(filtre, pageable));
     }
 
     @GetMapping("/stagiaires/{id}")
+    @PreAuthorize("@securite.peutAccederStagiaire(#id)")
     public ResponseEntity<StagiaireDto> getStagiaire(@PathVariable(name = "id") Long id)throws StagiaireNotFoundException {
         return ResponseEntity.ok(stagiaireService.getStagiaire(id));
     }
 
     @GetMapping("/stagiaires/search")
     public ResponseEntity<List<StagiaireDto>> searchStagiaire(@RequestParam(name = "keyword",defaultValue = "") String keyword){
-        return ResponseEntity.ok(stagiaireService.searchStagiaire(keyword));
+        return securite.encadrantRestreint()
+                .map(enc -> ResponseEntity.ok(stagiairesDe(new StagiaireFiltre(keyword, null, null, null, null, enc))))
+                .orElseGet(() -> ResponseEntity.ok(stagiaireService.searchStagiaire(keyword)));
     }
 
     @PostMapping("/stagiaires")
@@ -69,5 +84,9 @@ public class StagiaireController {
     @PutMapping("/stagiaires/{id}")
     public ResponseEntity<StagiaireDto> updateStagiaire(@Valid @RequestBody StagiaireDto stagiaireDto, @PathVariable Long id) {
         return ResponseEntity.ok(stagiaireService.updateStagiaire(stagiaireDto, id));
+    }
+
+    private List<StagiaireDto> stagiairesDe(StagiaireFiltre filtre) {
+        return stagiaireService.rechercherStagiaires(filtre, Pageable.unpaged(TRI_PAR_NOM)).content();
     }
 }
