@@ -54,3 +54,4 @@ Thumbs.db
 # ===== Navigateurs téléchargés (tests) =====
 chrome-headless-shell/
 .puppeteer/
+CLAUDE.md
