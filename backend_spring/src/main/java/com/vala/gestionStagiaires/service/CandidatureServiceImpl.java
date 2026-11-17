@@ -9,12 +9,16 @@ import com.vala.gestionStagiaires.DTOs.candidature.CandidatureDto;
 import com.vala.gestionStagiaires.DTOs.candidature.CandidatureFiltre;
 import com.vala.gestionStagiaires.DTOs.candidature.CandidatureRequest;
 import com.vala.gestionStagiaires.DTOs.candidature.CandidatureStatistiques;
+import com.vala.gestionStagiaires.DTOs.candidature.DepartementPublic;
+import com.vala.gestionStagiaires.DTOs.candidature.FichierCv;
 import com.vala.gestionStagiaires.entities.Candidature;
+import com.vala.gestionStagiaires.entities.CvCandidature;
 import com.vala.gestionStagiaires.entities.Departement;
 import com.vala.gestionStagiaires.enums.CandidatureStatus;
 import com.vala.gestionStagiaires.exceptions.BusinessRuleException;
 import com.vala.gestionStagiaires.exceptions.ResourceNotFoundException;
 import com.vala.gestionStagiaires.repository.CandidatureRepository;
+import com.vala.gestionStagiaires.repository.CvCandidatureRepository;
 import com.vala.gestionStagiaires.repository.DepartementRepository;
 import com.vala.gestionStagiaires.repository.StagiaireRepository;
 import com.vala.gestionStagiaires.repository.projection.ComptageParLibelle;
@@ -23,6 +27,7 @@ import com.vala.gestionStagiaires.repository.projection.DelaiDecision;
 import com.vala.gestionStagiaires.repository.specification.CandidatureSpecifications;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -51,9 +56,10 @@ public class CandidatureServiceImpl implements CandidatureService {
     private final StagiaireRepository stagiaireRepository;
     private final StagiaireService stagiaireService;
     private final Clock clock;
+    private final CvCandidatureRepository cvRepository;
 
     @Override
-    public CandidatureDto soumettre(CandidatureRequest request) {
+    public CandidatureDto soumettre(CandidatureRequest request, FichierCv cv) {
         if (candidatureRepository.existsByEmailIgnoreCaseAndStatutIn(request.email(), CandidatureStatus.ACTIVES)) {
             throw new BusinessRuleException("Une candidature est déjà en cours de traitement pour l'email "
                     + request.email() + ".");
@@ -63,7 +69,51 @@ public class CandidatureServiceImpl implements CandidatureService {
                 .dateSoumission(Instant.now(clock))
                 .build();
         remplir(candidature, request);
-        return CandidatureDto.of(candidatureRepository.save(candidature));
+        Candidature enregistree = candidatureRepository.save(candidature);
+        if (cv != null) {
+            enregistrerCv(enregistree, cv);
+        }
+        return CandidatureDto.of(enregistree);
+    }
+
+    @Override
+    public CandidatureDto remplacerCv(Long id, FichierCv cv) {
+        Candidature candidature = findCandidature(id);
+        if (!candidature.getStatut().isActive()) {
+            throw new BusinessRuleException("Le CV d'une candidature " + candidature.getStatut() + " ne peut plus être modifié.");
+        }
+        enregistrerCv(candidature, cv);
+        return CandidatureDto.of(candidature);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public FichierCv cv(Long id) {
+        findCandidature(id);
+        return cvRepository.findByCandidatureId(id)
+                .map(cv -> new FichierCv(cv.getNomFichier(), cv.getContenu()))
+                .orElseThrow(() -> new ResourceNotFoundException("Aucun CV n'est joint à cette candidature."));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<DepartementPublic> departementsPublics() {
+        return departementRepository.findAll(Sort.by("nom")).stream()
+                .map(d -> new DepartementPublic(d.getId(), d.getNom()))
+                .toList();
+    }
+
+    /** Crée ou remplace le CV et marque la candidature comme « CV fourni ». */
+    private void enregistrerCv(Candidature candidature, FichierCv fichier) {
+        CvCandidature cv = cvRepository.findByCandidatureId(candidature.getId())
+                .orElseGet(() -> CvCandidature.builder().candidature(candidature).build());
+        cv.setNomFichier(fichier.nomFichier());
+        cv.setTaille(fichier.taille());
+        cv.setContenu(fichier.contenu());
+        cv.setDateDepot(Instant.now(clock));
+        cvRepository.save(cv);
+        candidature.setCvFourni(true);
+        candidatureRepository.save(candidature);
     }
 
     @Override
@@ -100,6 +150,7 @@ public class CandidatureServiceImpl implements CandidatureService {
         if (candidature.getStatut() == CandidatureStatus.ACCEPTEE) {
             throw new BusinessRuleException("Une candidature acceptée ne peut pas être supprimée : elle est liée au stagiaire créé.");
         }
+        cvRepository.supprimerParCandidature(id);
         candidatureRepository.delete(candidature);
     }
 

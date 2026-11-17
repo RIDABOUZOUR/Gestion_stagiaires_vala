@@ -28,7 +28,8 @@ import java.nio.charset.StandardCharsets;
  * des {@code @PreAuthorize("@securite...")} sur les contrôleurs limitent en plus
  * l'accès à ses propres stagiaires) :
  * <pre>
- *   Public           POST /auth/login, POST /candidatures, documentation Swagger
+ *   Public           POST /auth/login, POST /candidatures (avec CV), GET /candidatures/departements,
+ *                    documentation Swagger
  *   ADMIN            /utilisateurs/**
  *   ADMIN, RH        candidatures, statistiques, exports CSV, attestations,
  *                    création / modification / suppression des données de référence
@@ -57,6 +58,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/candidatures").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/candidatures/departements").permitAll()
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/error").permitAll()
 
                         .requestMatchers("/auth/me").authenticated()

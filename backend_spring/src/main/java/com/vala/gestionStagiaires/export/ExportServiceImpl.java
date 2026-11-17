@@ -76,12 +76,12 @@ public class ExportServiceImpl implements ExportService {
         List<Candidature> candidatures = charger(candidatureRepository, CandidatureSpecifications.avecFiltre(filtre), tri);
         CsvWriter csv = new CsvWriter(List.of("Nom", "Prénom", "Email", "Téléphone", "Organisme", "Filière", "Niveau",
                 "Département souhaité", "Début souhaité", "Fin souhaitée", "Statut", "Soumise le", "Décision le",
-                "Motif du refus"), clock.getZone());
+                "Motif du refus", "CV fourni"), clock.getZone());
         for (Candidature c : candidatures) {
             csv.ligne(c.getNom(), c.getPrenom(), c.getEmail(), c.getTelephone(), c.getOrganisme(), c.getFiliere(),
                     c.getNiveau(), c.getDepartementSouhaite() != null ? c.getDepartementSouhaite().getNom() : null,
                     c.getDateDebutSouhaitee(), c.getDateFinSouhaitee(), c.getStatut(), c.getDateSoumission(),
-                    c.getDateDecision(), c.getMotifRefus());
+                    c.getDateDecision(), c.getMotifRefus(), c.isCvFourni() ? "Oui" : "Non");
         }
         return fichier("candidatures", csv);
     }

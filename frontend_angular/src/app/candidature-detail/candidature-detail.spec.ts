@@ -20,10 +20,11 @@ describe('CandidatureDetail', () => {
     id: 1, nom: 'Alami', prenom: 'Sara', email: 's@mail.com', telephone: null, dateNaissance: null, sexe: null, organisme: 'ENSA',
     niveau: null, filiere: null, departementSouhaiteId: 2, departementSouhaiteNom: 'Informatique', dateDebutSouhaitee: null,
     dateFinSouhaitee: null, motivation: null, statut, motifRefus: null, dateSoumission: '2026-03-01T10:00:00Z', dateDecision: null, stagiaireId: null,
+    cvFourni: true,
   });
 
   beforeEach(async () => {
-    service = jasmine.createSpyObj<CandidatureService>('CandidatureService', ['candidature', 'etudier', 'refuser', 'retirer', 'accepter', 'supprimer']);
+    service = jasmine.createSpyObj<CandidatureService>('CandidatureService', ['candidature', 'etudier', 'refuser', 'retirer', 'accepter', 'supprimer', 'cv', 'remplacerCv']);
     service.candidature.and.returnValue(of(candidature('EN_ETUDE')));
     const stages = jasmine.createSpyObj<Stage>('Stage', ['getStages']);
     stages.getStages.and.returnValue(of([
@@ -73,5 +74,19 @@ describe('CandidatureDetail', () => {
     component.refuser();
     expect(service.refuser).not.toHaveBeenCalled();
     expect(notifications.error).toHaveBeenCalled();
+  });
+
+  it('affiche le bouton « Voir le CV » quand un CV est joint', () => {
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Voir le CV');
+  });
+
+  it('refuse un fichier qui n’est pas un PDF sans appeler l’API', () => {
+    spyOn(notifications, 'error');
+    const champ = { files: [new File(['texte'], 'cv.txt', { type: 'text/plain' })], value: 'x' } as unknown as HTMLInputElement;
+
+    component.envoyerCv({ target: champ } as unknown as Event);
+
+    expect(notifications.error).toHaveBeenCalledWith('Le CV doit être un fichier PDF.');
+    expect(service.remplacerCv).not.toHaveBeenCalled();
   });
 });

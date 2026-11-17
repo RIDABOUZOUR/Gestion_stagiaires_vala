@@ -1,10 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { AbstractControl, FormBuilder, FormGroup, ValidationErrors, Validators } from '@angular/forms';
 import { finalize } from 'rxjs';
+import { DepartementPublic } from '../models/candidature.model';
 import { Sexe } from '../models/stage.model';
 import { AuthService } from '../services/auth';
 import { CandidatureService } from '../services/candidature';
 import { extractApiError } from '../shared/api-error';
+import { erreurCv, tailleLisible } from '../shared/cv';
 
 const PHONE_PATTERN = /^(\+\d{1,3}[-. ]?)?\d{10}$/;
 
@@ -16,8 +18,8 @@ function periodeCoherente(group: AbstractControl): ValidationErrors | null {
 }
 
 /**
- * Dépôt d'une candidature. Page publique : accessible sans compte (le
- * département souhaité est alors saisi librement, la liste n'étant pas publique).
+ * Dépôt d'une candidature. Page publique : accessible sans compte, avec le CV
+ * (PDF, obligatoire pour un visiteur) et le département souhaité (facultatif).
  */
 @Component({
   selector: 'app-postuler',
@@ -28,6 +30,10 @@ export class Postuler implements OnInit {
   readonly sexes = [Sexe.FEMME, Sexe.HOMME];
 
   form!: FormGroup;
+  departements: DepartementPublic[] = [];
+  /** CV choisi et éventuelle erreur (type, taille, absence). */
+  cv: File | null = null;
+  erreurFichier: string | null = null;
   envoi = false;
   erreur: string | null = null;
   envoyee = false;
@@ -50,12 +56,40 @@ export class Postuler implements OnInit {
         organisme: ['', [Validators.maxLength(100)]],
         niveau: ['', [Validators.maxLength(50)]],
         filiere: ['', [Validators.maxLength(100)]],
+        departementSouhaiteId: [null as number | null],
         dateDebutSouhaitee: [''],
         dateFinSouhaitee: [''],
         motivation: ['', [Validators.maxLength(4000)]],
       },
       { validators: periodeCoherente },
     );
+    // Liste facultative : en cas d'échec, le candidat garde « Sans préférence ».
+    this.candidatureService.departements().subscribe({ next: (d) => (this.departements = d), error: () => undefined });
+  }
+
+  /** Le CV est obligatoire pour un visiteur ; un RH connecté peut saisir une candidature sans CV. */
+  get cvObligatoire(): boolean {
+    return !this.auth.estConnecte();
+  }
+
+  get tailleCv(): string {
+    return this.cv ? tailleLisible(this.cv.size) : '';
+  }
+
+  choisirCv(evenement: Event): void {
+    const champ = evenement.target as HTMLInputElement;
+    const fichier = champ.files?.[0] ?? null;
+    this.erreurFichier = erreurCv(fichier);
+    this.cv = this.erreurFichier ? null : fichier;
+    if (this.erreurFichier) {
+      champ.value = '';
+    }
+  }
+
+  retirerCv(champ: HTMLInputElement): void {
+    this.cv = null;
+    this.erreurFichier = null;
+    champ.value = '';
   }
 
   isInvalid(field: string): boolean {
@@ -64,7 +98,10 @@ export class Postuler implements OnInit {
   }
 
   envoyer(): void {
-    if (this.form.invalid) {
+    if (!this.cv && this.cvObligatoire) {
+      this.erreurFichier = 'Joignez votre CV au format PDF.';
+    }
+    if (this.form.invalid || this.erreurFichier) {
       this.form.markAllAsTouched();
       return;
     }
@@ -83,11 +120,11 @@ export class Postuler implements OnInit {
         organisme: vide(v.organisme),
         niveau: vide(v.niveau),
         filiere: vide(v.filiere),
-        departementSouhaiteId: null,
+        departementSouhaiteId: v.departementSouhaiteId ? Number(v.departementSouhaiteId) : null,
         dateDebutSouhaitee: vide(v.dateDebutSouhaitee),
         dateFinSouhaitee: vide(v.dateFinSouhaitee),
         motivation: vide(v.motivation),
-      })
+      }, this.cv)
       .pipe(finalize(() => (this.envoi = false)))
       .subscribe({
         next: () => (this.envoyee = true),
@@ -96,7 +133,9 @@ export class Postuler implements OnInit {
   }
 
   recommencer(): void {
-    this.form.reset({ sexe: '' });
+    this.form.reset({ sexe: '', departementSouhaiteId: null });
+    this.cv = null;
+    this.erreurFichier = null;
     this.envoyee = false;
   }
 }

@@ -151,9 +151,37 @@ class SecuriteIntegrationTest {
         @Test
         @DisplayName("POST /candidatures est public")
         void candidaturePublique() throws Exception {
-            mockMvc.perform(post("/candidatures").contentType(MediaType.APPLICATION_JSON)
-                            .content("{\"nom\":\"Doukkali\",\"prenom\":\"Lina\",\"email\":\"lina@mail.com\",\"sexe\":\"FEMME\"}"))
-                    .andExpect(status().isCreated());
+            String json = "{\"nom\":\"Doukkali\",\"prenom\":\"Lina\",\"email\":\"lina@mail.com\",\"sexe\":\"FEMME\"}";
+            org.springframework.mock.web.MockMultipartFile candidature =
+                    new org.springframework.mock.web.MockMultipartFile("candidature", "", MediaType.APPLICATION_JSON_VALUE, json.getBytes());
+
+            // Sans CV : refusé pour un visiteur.
+            mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart("/candidatures").file(candidature))
+                    .andExpect(status().isBadRequest());
+            // Avec un PDF : acceptée, et le CV est ensuite lisible par un RH… mais pas par un visiteur ni un encadrant.
+            String reponse = mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart("/candidatures")
+                            .file(candidature)
+                            .file(new org.springframework.mock.web.MockMultipartFile("cv", "cv.pdf", MediaType.APPLICATION_PDF_VALUE, "%PDF-1.7 cv".getBytes())))
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.cvFourni").value(true))
+                    .andReturn().getResponse().getContentAsString();
+            String id = reponse.replaceAll(".*\"id\":(\\d+).*", "$1");
+
+            mockMvc.perform(avec(get("/candidatures/" + id + "/cv"), jetonRh))
+                    .andExpect(status().isOk())
+                    .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content().bytes("%PDF-1.7 cv".getBytes()));
+            mockMvc.perform(get("/candidatures/" + id + "/cv")).andExpect(status().isUnauthorized());
+            mockMvc.perform(avec(get("/candidatures/" + id + "/cv"), jetonEncadrant)).andExpect(status().isForbidden());
+        }
+
+        @Test
+        @DisplayName("la liste des départements pour candidater est publique, la liste complète ne l'est pas")
+        void departementsPublics() throws Exception {
+            mockMvc.perform(get("/candidatures/departements"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$[0].nom").value("Informatique"))
+                    .andExpect(jsonPath("$[0].responsable").doesNotExist());
+            mockMvc.perform(get("/departements")).andExpect(status().isUnauthorized());
         }
 
         @Test

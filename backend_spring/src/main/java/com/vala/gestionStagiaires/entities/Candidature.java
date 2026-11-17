@@ -4,6 +4,7 @@ import com.vala.gestionStagiaires.enums.CandidatureStatus;
 import com.vala.gestionStagiaires.enums.Sexe;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.ColumnDefault;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -69,6 +70,12 @@ public class Candidature {
 
     /** Date d'acceptation, de refus ou de retrait. */
     private Instant dateDecision;
+
+    /** Un CV est-il joint ? (le fichier lui-même est dans CvCandidature) */
+    @Column(nullable = false)
+    @ColumnDefault("false")
+    @Builder.Default
+    private boolean cvFourni = false;
 
     /** Stagiaire créé à l'acceptation. */
     @OneToOne(fetch = FetchType.LAZY)

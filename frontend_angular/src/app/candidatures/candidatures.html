@@ -55,6 +55,7 @@
         <tr *ngFor="let c of candidatures; trackBy: trackById">
           <td>
             <a [routerLink]="['/candidatures', c.id]" class="font-medium text-indigo-700 hover:underline">{{ c.prenom }} {{ c.nom }}</a>
+            <span *ngIf="c.cvFourni" class="badge badge-slate ml-1" title="CV joint">CV</span>
             <span class="block text-xs text-slate-500">{{ c.email }}</span>
           </td>
           <td>{{ c.organisme || '—' }}</td>

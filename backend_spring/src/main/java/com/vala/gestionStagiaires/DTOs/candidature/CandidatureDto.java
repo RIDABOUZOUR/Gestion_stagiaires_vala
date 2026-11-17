@@ -27,7 +27,8 @@ public record CandidatureDto(
         String motifRefus,
         Instant dateSoumission,
         Instant dateDecision,
-        Long stagiaireId) {
+        Long stagiaireId,
+        boolean cvFourni) {
 
     public static CandidatureDto of(Candidature c) {
         return new CandidatureDto(c.getId(), c.getNom(), c.getPrenom(), c.getEmail(), c.getTelephone(),
@@ -36,6 +37,7 @@ public record CandidatureDto(
                 c.getDepartementSouhaite() != null ? c.getDepartementSouhaite().getNom() : null,
                 c.getDateDebutSouhaitee(), c.getDateFinSouhaitee(), c.getMotivation(), c.getStatut(),
                 c.getMotifRefus(), c.getDateSoumission(), c.getDateDecision(),
-                c.getStagiaire() != null ? c.getStagiaire().getId() : null);
+                c.getStagiaire() != null ? c.getStagiaire().getId() : null,
+                c.isCvFourni());
     }
 }

@@ -10,6 +10,8 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.time.Instant;
@@ -56,6 +58,24 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<Map<String, Object>> handleBadCredentials(BadCredentialsException ex) {
         return build(HttpStatus.UNAUTHORIZED, ex.getMessage(), null);
+    }
+
+    /** Fichier envoyé refusé (CV absent, vide, pas en PDF…) → HTTP 400. */
+    @ExceptionHandler(FichierInvalideException.class)
+    public ResponseEntity<Map<String, Object>> handleFichierInvalide(FichierInvalideException ex) {
+        return build(HttpStatus.BAD_REQUEST, ex.getMessage(), null);
+    }
+
+    /** Partie manquante d'une requête multipart (ex. « candidature ») → HTTP 400. */
+    @ExceptionHandler(MissingServletRequestPartException.class)
+    public ResponseEntity<Map<String, Object>> handlePartieManquante(MissingServletRequestPartException ex) {
+        return build(HttpStatus.BAD_REQUEST, "Partie manquante dans la requête : " + ex.getRequestPartName() + ".", null);
+    }
+
+    /** Fichier au-delà de la limite d'upload → HTTP 413. */
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<Map<String, Object>> handleTropVolumineux(MaxUploadSizeExceededException ex) {
+        return build(HttpStatus.PAYLOAD_TOO_LARGE, "Le fichier dépasse 5 Mo.", null);
     }
 
     /** Ressource inexistante → HTTP 404. */

@@ -64,6 +64,9 @@ class CandidatureServiceImplTest {
     @Mock
     private StagiaireService stagiaireService;
 
+    @Mock
+    private com.vala.gestionStagiaires.repository.CvCandidatureRepository cvRepository;
+
     private CandidatureServiceImpl service;
 
     private final Departement info = Departement.builder().id(2L).nom("Informatique").build();
@@ -71,7 +74,7 @@ class CandidatureServiceImplTest {
     @BeforeEach
     void setUp() {
         service = new CandidatureServiceImpl(candidatureRepository, departementRepository, stagiaireRepository,
-                stagiaireService, Clock.fixed(MAINTENANT, ZoneOffset.UTC));
+                stagiaireService, Clock.fixed(MAINTENANT, ZoneOffset.UTC), cvRepository);
     }
 
     private static CandidatureRequest requete(Long departementId) {
@@ -100,7 +103,7 @@ class CandidatureServiceImplTest {
             when(departementRepository.findById(2L)).thenReturn(Optional.of(info));
             when(candidatureRepository.save(any(Candidature.class))).thenAnswer(inv -> inv.getArgument(0));
 
-            CandidatureDto dto = service.soumettre(requete(2L));
+            CandidatureDto dto = service.soumettre(requete(2L), null);
 
             assertThat(dto.statut()).isEqualTo(CandidatureStatus.SOUMISE);
             assertThat(dto.dateSoumission()).isEqualTo(MAINTENANT);
@@ -114,7 +117,7 @@ class CandidatureServiceImplTest {
             when(candidatureRepository.existsByEmailIgnoreCaseAndStatutIn("sara@mail.com", CandidatureStatus.ACTIVES))
                     .thenReturn(true);
 
-            assertThatThrownBy(() -> service.soumettre(requete(null)))
+            assertThatThrownBy(() -> service.soumettre(requete(null), null))
                     .isInstanceOf(BusinessRuleException.class)
                     .hasMessageContaining("déjà en cours");
             verify(candidatureRepository, never()).save(any());
@@ -125,7 +128,7 @@ class CandidatureServiceImplTest {
         void soumettre_departementInconnu() {
             when(departementRepository.findById(9L)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> service.soumettre(requete(9L))).isInstanceOf(ResourceNotFoundException.class);
+            assertThatThrownBy(() -> service.soumettre(requete(9L), null)).isInstanceOf(ResourceNotFoundException.class);
         }
 
         @ParameterizedTest(name = "candidature {0} : modification refusée")
@@ -165,6 +168,7 @@ class CandidatureServiceImplTest {
 
             service.supprimer(1L);
 
+            verify(cvRepository).supprimerParCandidature(1L);
             verify(candidatureRepository).delete(c);
         }
     }
@@ -343,5 +347,90 @@ class CandidatureServiceImplTest {
         assertThat(stats.total()).isZero();
         assertThat(stats.tauxAcceptation()).isNull();
         assertThat(stats.delaiMoyenDecisionJours()).isNull();
+    }
+
+    @Nested
+    @DisplayName("CV")
+    class Cv {
+
+        private final com.vala.gestionStagiaires.DTOs.candidature.FichierCv pdf =
+                new com.vala.gestionStagiaires.DTOs.candidature.FichierCv("cv-sara.pdf", "%PDF-1.4 contenu".getBytes());
+
+        @Test
+        @DisplayName("soumettre() avec CV : enregistre le fichier et marque la candidature")
+        void soumettreAvecCv() {
+            when(candidatureRepository.save(any(Candidature.class))).thenAnswer(inv -> {
+                Candidature c = inv.getArgument(0);
+                if (c.getId() == null) {
+                    c.setId(1L);
+                }
+                return c;
+            });
+            when(cvRepository.findByCandidatureId(1L)).thenReturn(Optional.empty());
+
+            CandidatureDto dto = service.soumettre(requete(null), pdf);
+
+            ArgumentCaptor<com.vala.gestionStagiaires.entities.CvCandidature> captor =
+                    ArgumentCaptor.forClass(com.vala.gestionStagiaires.entities.CvCandidature.class);
+            verify(cvRepository).save(captor.capture());
+            assertThat(captor.getValue().getNomFichier()).isEqualTo("cv-sara.pdf");
+            assertThat(captor.getValue().getTaille()).isEqualTo(pdf.contenu().length);
+            assertThat(captor.getValue().getDateDepot()).isEqualTo(MAINTENANT);
+            assertThat(dto.cvFourni()).isTrue();
+        }
+
+        @Test
+        @DisplayName("soumettre() sans CV : aucun fichier enregistré")
+        void soumettreSansCv() {
+            when(candidatureRepository.save(any(Candidature.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            assertThat(service.soumettre(requete(null), null).cvFourni()).isFalse();
+            verify(cvRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("remplacerCv() met à jour le CV existant d'une candidature active")
+        void remplacerCv() {
+            Candidature c = candidature(CandidatureStatus.EN_ETUDE);
+            existe(c);
+            com.vala.gestionStagiaires.entities.CvCandidature existant =
+                    com.vala.gestionStagiaires.entities.CvCandidature.builder().id(3L).candidature(c).nomFichier("ancien.pdf")
+                            .contenu(new byte[]{1}).taille(1).dateDepot(MAINTENANT.minusSeconds(60)).build();
+            when(cvRepository.findByCandidatureId(1L)).thenReturn(Optional.of(existant));
+
+            service.remplacerCv(1L, pdf);
+
+            assertThat(existant.getId()).isEqualTo(3L);
+            assertThat(existant.getNomFichier()).isEqualTo("cv-sara.pdf");
+            assertThat(c.isCvFourni()).isTrue();
+        }
+
+        @ParameterizedTest(name = "candidature {0} : CV non modifiable")
+        @EnumSource(value = CandidatureStatus.class, names = {"ACCEPTEE", "REFUSEE", "RETIREE"})
+        void remplacerCv_candidatureTraitee(CandidatureStatus statut) {
+            existe(candidature(statut));
+
+            assertThatThrownBy(() -> service.remplacerCv(1L, pdf)).isInstanceOf(BusinessRuleException.class);
+            verify(cvRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("cv() : 404 s'il n'y a pas de CV")
+        void cvAbsent() {
+            existe(candidature(CandidatureStatus.SOUMISE));
+            when(cvRepository.findByCandidatureId(1L)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> service.cv(1L)).isInstanceOf(ResourceNotFoundException.class);
+        }
+
+        @Test
+        @DisplayName("departementsPublics() : identifiant et nom seulement, triés par nom")
+        void departementsPublics() {
+            when(departementRepository.findAll(org.springframework.data.domain.Sort.by("nom"))).thenReturn(List.of(
+                    Departement.builder().id(2L).nom("Informatique").responsable("Secret").build()));
+
+            assertThat(service.departementsPublics())
+                    .containsExactly(new com.vala.gestionStagiaires.DTOs.candidature.DepartementPublic(2L, "Informatique"));
+        }
     }
 }

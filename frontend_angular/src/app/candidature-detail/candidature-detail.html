@@ -15,7 +15,18 @@
         <h2 class="truncate text-base font-semibold text-slate-900">{{ c.prenom }} {{ c.nom }}</h2>
         <p class="text-xs text-slate-500">Reçue le {{ c.dateSoumission | date: 'dd/MM/yyyy à HH:mm' }}</p>
       </div>
-      <span class="badge" [ngClass]="statuts[c.statut].badge">{{ statuts[c.statut].libelle }}</span>
+      <div class="flex flex-wrap items-center gap-2">
+        <button *ngIf="c.cvFourni" type="button" class="btn btn-secondary" [disabled]="ouvertureCv" (click)="voirCv()">
+          {{ ouvertureCv ? 'Ouverture…' : 'Voir le CV' }}
+        </button>
+        <ng-container *ngIf="active">
+          <input #champCv id="nouveau-cv" type="file" accept="application/pdf,.pdf" class="sr-only" (change)="envoyerCv($event)" />
+          <label for="nouveau-cv" class="btn btn-ghost" [class.pointer-events-none]="envoiCv">
+            {{ envoiCv ? 'Envoi…' : (c.cvFourni ? 'Remplacer le CV' : 'Ajouter un CV') }}
+          </label>
+        </ng-container>
+        <span class="badge" [ngClass]="statuts[c.statut].badge">{{ statuts[c.statut].libelle }}</span>
+      </div>
     </div>
 
     <dl class="card-body grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-3">
@@ -24,6 +35,7 @@
       <div><dt class="text-slate-400">Date de naissance</dt><dd class="font-medium text-slate-800">{{ c.dateNaissance ? (c.dateNaissance | date: 'dd/MM/yyyy') : '—' }}</dd></div>
       <div><dt class="text-slate-400">Organisme</dt><dd class="font-medium text-slate-800">{{ c.organisme || '—' }}</dd></div>
       <div><dt class="text-slate-400">Filière / niveau</dt><dd class="font-medium text-slate-800">{{ c.filiere || '—' }} {{ c.niveau ? '(' + c.niveau + ')' : '' }}</dd></div>
+      <div><dt class="text-slate-400">CV</dt><dd class="font-medium text-slate-800">{{ c.cvFourni ? 'Joint' : 'Aucun' }}</dd></div>
       <div><dt class="text-slate-400">Département souhaité</dt><dd class="font-medium text-slate-800">{{ c.departementSouhaiteNom || '—' }}</dd></div>
       <div class="sm:col-span-2 lg:col-span-3">
         <dt class="text-slate-400">Période souhaitée</dt>

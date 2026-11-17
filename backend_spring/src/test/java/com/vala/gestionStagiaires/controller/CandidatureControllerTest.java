@@ -51,6 +51,9 @@ class CandidatureControllerTest {
     @Mock
     private CandidatureService candidatureService;
 
+    @Mock
+    private com.vala.gestionStagiaires.securite.SecuriteService securite;
+
     @InjectMocks
     private CandidatureController controller;
 
@@ -69,13 +72,15 @@ class CandidatureControllerTest {
 
     private static CandidatureDto dto(CandidatureStatus statut) {
         return new CandidatureDto(1L, "Alami", "Sara", "sara@mail.com", null, null, Sexe.FEMME, "ENSA", null, null,
-                null, null, null, null, null, statut, null, null, null, statut == CandidatureStatus.ACCEPTEE ? 40L : null);
+                null, null, null, null, null, statut, null, null, null, statut == CandidatureStatus.ACCEPTEE ? 40L : null, false);
     }
 
     @Test
     @DisplayName("POST /candidatures -> 201")
     void soumettre() throws Exception {
-        when(candidatureService.soumettre(any(CandidatureRequest.class))).thenReturn(dto(CandidatureStatus.SOUMISE));
+        when(securite.estGestionnaire()).thenReturn(true); // saisie par un RH : JSON sans CV autorisé
+        when(candidatureService.soumettre(any(CandidatureRequest.class), org.mockito.ArgumentMatchers.isNull()))
+                .thenReturn(dto(CandidatureStatus.SOUMISE));
 
         mockMvc.perform(post("/candidatures").contentType(MediaType.APPLICATION_JSON).content(CANDIDATURE_VALIDE))
                 .andExpect(status().isCreated())
@@ -97,7 +102,8 @@ class CandidatureControllerTest {
     @Test
     @DisplayName("POST candidature en double -> 409")
     void soumettre_doublon() throws Exception {
-        when(candidatureService.soumettre(any(CandidatureRequest.class)))
+        when(securite.estGestionnaire()).thenReturn(true);
+        when(candidatureService.soumettre(any(CandidatureRequest.class), org.mockito.ArgumentMatchers.isNull()))
                 .thenThrow(new BusinessRuleException("Une candidature est déjà en cours de traitement pour l'email sara@mail.com."));
 
         mockMvc.perform(post("/candidatures").contentType(MediaType.APPLICATION_JSON).content(CANDIDATURE_VALIDE))
@@ -180,5 +186,100 @@ class CandidatureControllerTest {
         mockMvc.perform(get("/candidatures/1")).andExpect(jsonPath("$.email").value("sara@mail.com"));
         mockMvc.perform(delete("/candidatures/1")).andExpect(status().isNoContent());
         verify(candidatureService).supprimer(1L);
+    }
+
+    // ---- CV et départements -------------------------------------------
+
+    private static org.springframework.mock.web.MockMultipartFile partieCandidature(String json) {
+        return new org.springframework.mock.web.MockMultipartFile("candidature", "", MediaType.APPLICATION_JSON_VALUE, json.getBytes());
+    }
+
+    private static org.springframework.mock.web.MockMultipartFile cv(String nom, byte[] contenu) {
+        return new org.springframework.mock.web.MockMultipartFile("cv", nom, MediaType.APPLICATION_PDF_VALUE, contenu);
+    }
+
+    @Test
+    @DisplayName("POST multipart avec un vrai PDF -> 201, CV validé transmis au service")
+    void soumettreAvecCv() throws Exception {
+        when(candidatureService.soumettre(any(CandidatureRequest.class), any())).thenReturn(dto(CandidatureStatus.SOUMISE));
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart("/candidatures")
+                        .file(partieCandidature(CANDIDATURE_VALIDE))
+                        .file(cv("../../Mon CV é.pdf", "%PDF-1.7 contenu".getBytes())))
+                .andExpect(status().isCreated());
+
+        ArgumentCaptor<com.vala.gestionStagiaires.DTOs.candidature.FichierCv> captor =
+                ArgumentCaptor.forClass(com.vala.gestionStagiaires.DTOs.candidature.FichierCv.class);
+        verify(candidatureService).soumettre(any(CandidatureRequest.class), captor.capture());
+        assertThat(captor.getValue().nomFichier()).isEqualTo("Mon_CV_e.pdf");
+    }
+
+    @Test
+    @DisplayName("visiteur sans CV (multipart ou JSON) -> 400 « CV obligatoire »")
+    void cvObligatoirePourUnVisiteur() throws Exception {
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart("/candidatures")
+                        .file(partieCandidature(CANDIDATURE_VALIDE)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Le CV (PDF) est obligatoire."));
+        mockMvc.perform(post("/candidatures").contentType(MediaType.APPLICATION_JSON).content(CANDIDATURE_VALIDE))
+                .andExpect(status().isBadRequest());
+        verifyNoInteractions(candidatureService);
+    }
+
+    @Test
+    @DisplayName("fichier qui n'est pas un PDF (même nommé .pdf) -> 400")
+    void fauxPdf() throws Exception {
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart("/candidatures")
+                        .file(partieCandidature(CANDIDATURE_VALIDE))
+                        .file(cv("cv.pdf", "Ceci est un fichier texte".getBytes())))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Le CV doit être un fichier PDF."));
+        verifyNoInteractions(candidatureService);
+    }
+
+    @Test
+    @DisplayName("partie « candidature » invalide -> 400 avec les erreurs par champ")
+    void partieCandidatureInvalide() throws Exception {
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart("/candidatures")
+                        .file(partieCandidature("{\"nom\":\"Al\",\"prenom\":\"Sara\",\"email\":\"x\",\"sexe\":\"FEMME\"}"))
+                        .file(cv("cv.pdf", "%PDF-1.7".getBytes())))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors.email").exists());
+    }
+
+    @Test
+    @DisplayName("GET /candidatures/{id}/cv -> PDF affiché dans le navigateur")
+    void telechargerCv() throws Exception {
+        byte[] pdf = "%PDF-1.7 contenu".getBytes();
+        when(candidatureService.cv(1L)).thenReturn(new com.vala.gestionStagiaires.DTOs.candidature.FichierCv("cv-sara.pdf", pdf));
+
+        mockMvc.perform(get("/candidatures/1/cv"))
+                .andExpect(status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_PDF))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header()
+                        .string("Content-Disposition", "inline; filename=\"cv-sara.pdf\""))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content().bytes(pdf));
+    }
+
+    @Test
+    @DisplayName("PUT /candidatures/{id}/cv -> CV remplacé")
+    void remplacerCv() throws Exception {
+        when(candidatureService.remplacerCv(eq(1L), any())).thenReturn(dto(CandidatureStatus.EN_ETUDE));
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart(org.springframework.http.HttpMethod.PUT, "/candidatures/1/cv")
+                        .file(cv("cv.pdf", "%PDF-1.7".getBytes())))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("GET /candidatures/departements -> identifiant et nom")
+    void departements() throws Exception {
+        when(candidatureService.departementsPublics()).thenReturn(List.of(
+                new com.vala.gestionStagiaires.DTOs.candidature.DepartementPublic(2L, "Informatique")));
+
+        mockMvc.perform(get("/candidatures/departements"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].nom").value("Informatique"))
+                .andExpect(jsonPath("$[0].responsable").doesNotExist());
     }
 }

@@ -40,6 +40,13 @@ public class SecuriteService {
         return Optional.of(AUCUN_ENCADRANT);
     }
 
+    /** L'utilisateur courant est-il RH ou administrateur ? */
+    public boolean estGestionnaire() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return auth != null && auth.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()) || "ROLE_RH".equals(a.getAuthority()));
+    }
+
     public boolean peutAccederStagiaire(Long stagiaireId) {
         return encadrantRestreint()
                 .map(enc -> stagiaireRepository.existsByIdAndStageEncadrantId(stagiaireId, enc))

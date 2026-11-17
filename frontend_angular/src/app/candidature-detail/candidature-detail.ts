@@ -10,6 +10,8 @@ import { extractApiError } from '../shared/api-error';
 import { ConfirmService } from '../shared/confirm/confirm.service';
 import { CANDIDATURE_STATUT } from '../shared/libelles';
 import { NotificationService } from '../shared/notification/notification.service';
+import { erreurCv } from '../shared/cv';
+import { enregistrerFichier, messageErreurBlob } from '../shared/telechargement';
 
 @Component({
   selector: 'app-candidature-detail',
@@ -40,6 +42,63 @@ export class CandidatureDetail implements OnInit {
     private readonly notifications: NotificationService,
     private readonly confirm: ConfirmService,
   ) {}
+
+  ouvertureCv = false;
+  envoiCv = false;
+
+  /**
+   * Ouvre le CV dans un nouvel onglet. L'onglet est ouvert tout de suite (au clic)
+   * pour ne pas être bloqué par le navigateur, puis reçoit le PDF une fois chargé
+   * (le téléchargement passe par HttpClient pour envoyer le jeton).
+   */
+  voirCv(): void {
+    const onglet = typeof window !== 'undefined' ? window.open('', '_blank') : null;
+    this.ouvertureCv = true;
+    this.candidatureService
+      .cv(this.candidature!.id)
+      .pipe(finalize(() => (this.ouvertureCv = false)))
+      .subscribe({
+        next: (reponse) => {
+          if (onglet && reponse.body) {
+            const url = URL.createObjectURL(new Blob([reponse.body], { type: 'application/pdf' }));
+            onglet.location.href = url;
+            setTimeout(() => URL.revokeObjectURL(url), 60_000);
+          } else {
+            enregistrerFichier(reponse, 'cv.pdf'); // fenêtre bloquée : téléchargement classique
+          }
+        },
+        error: async (err) => {
+          onglet?.close();
+          this.notifications.error(await messageErreurBlob(err, 'Impossible d’ouvrir le CV.'));
+        },
+      });
+  }
+
+  /** Ajoute ou remplace le CV d'une candidature en cours de traitement. */
+  envoyerCv(evenement: Event): void {
+    const champ = evenement.target as HTMLInputElement;
+    const fichier = champ.files?.[0] ?? null;
+    champ.value = '';
+    if (!fichier) {
+      return;
+    }
+    const erreur = erreurCv(fichier);
+    if (erreur) {
+      this.notifications.error(erreur);
+      return;
+    }
+    this.envoiCv = true;
+    this.candidatureService
+      .remplacerCv(this.candidature!.id, fichier)
+      .pipe(finalize(() => (this.envoiCv = false)))
+      .subscribe({
+        next: (c) => {
+          this.candidature = c;
+          this.notifications.success('CV enregistré.');
+        },
+        error: (err) => this.notifications.error(extractApiError(err)),
+      });
+  }
 
   get active(): boolean {
     return this.candidature?.statut === 'SOUMISE' || this.candidature?.statut === 'EN_ETUDE';

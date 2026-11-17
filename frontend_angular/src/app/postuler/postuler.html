@@ -77,6 +77,34 @@
           </div>
         </div>
 
+        <div class="grid gap-5 sm:grid-cols-2">
+          <div>
+            <label class="label" for="departementSouhaiteId">Département souhaité</label>
+            <select id="departementSouhaiteId" formControlName="departementSouhaiteId" class="input">
+              <option [ngValue]="null">Sans préférence</option>
+              <option *ngFor="let d of departements" [ngValue]="d.id">{{ d.nom }}</option>
+            </select>
+          </div>
+
+          <div>
+            <span class="label">CV (PDF, 5 Mo max.) <span *ngIf="cvObligatoire" class="text-rose-500">*</span></span>
+            <input #champCv id="cv" type="file" accept="application/pdf,.pdf" class="sr-only" (change)="choisirCv($event)" />
+            <div
+              class="flex items-center gap-3 rounded-lg px-3 py-2 ring-1"
+              [ngClass]="erreurFichier ? 'ring-rose-300 bg-rose-50' : 'ring-slate-300 bg-white'">
+              <label for="cv" class="btn btn-secondary shrink-0 py-1.5">{{ cv ? 'Changer' : 'Choisir un fichier' }}</label>
+              <span *ngIf="cv" class="min-w-0 flex-1 truncate text-sm text-slate-700" [title]="cv.name">
+                {{ cv.name }} <span class="text-slate-400">· {{ tailleCv }}</span>
+              </span>
+              <span *ngIf="!cv" class="text-sm text-slate-400">Aucun fichier choisi</span>
+              <button *ngIf="cv" type="button" class="btn-icon h-7 w-7 text-slate-500 hover:bg-slate-100" (click)="retirerCv(champCv)" aria-label="Retirer le CV">
+                <app-icon name="x-mark" size="h-4 w-4"></app-icon>
+              </button>
+            </div>
+            <p class="field-error" *ngIf="erreurFichier">{{ erreurFichier }}</p>
+          </div>
+        </div>
+
         <div>
           <label class="label" for="motivation">Motivation</label>
           <textarea id="motivation" rows="5" formControlName="motivation" class="input"></textarea>

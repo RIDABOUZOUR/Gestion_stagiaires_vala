@@ -6,11 +6,25 @@ import com.vala.gestionStagiaires.DTOs.candidature.CandidatureDto;
 import com.vala.gestionStagiaires.DTOs.candidature.CandidatureFiltre;
 import com.vala.gestionStagiaires.DTOs.candidature.CandidatureRequest;
 import com.vala.gestionStagiaires.DTOs.candidature.CandidatureStatistiques;
+import com.vala.gestionStagiaires.DTOs.candidature.DepartementPublic;
+import com.vala.gestionStagiaires.DTOs.candidature.FichierCv;
 import org.springframework.data.domain.Pageable;
+
+import java.util.List;
 
 public interface CandidatureService {
 
-    CandidatureDto soumettre(CandidatureRequest request);
+    /** Enregistre la candidature et, s'il est fourni, son CV (déjà validé), dans la même transaction. */
+    CandidatureDto soumettre(CandidatureRequest request, FichierCv cv);
+
+    /** Ajoute ou remplace le CV d'une candidature encore en cours de traitement. */
+    CandidatureDto remplacerCv(Long id, FichierCv cv);
+
+    /** CV de la candidature ; 404 s'il n'y en a pas. */
+    FichierCv cv(Long id);
+
+    /** Départements proposés dans le formulaire public, triés par nom. */
+    List<DepartementPublic> departementsPublics();
 
     CandidatureDto getCandidature(Long id);
 

@@ -23,7 +23,17 @@ export interface Candidature {
   dateSoumission: string;
   dateDecision: string | null;
   stagiaireId: number | null;
+  cvFourni: boolean;
 }
+
+/** Département proposé dans le formulaire public. */
+export interface DepartementPublic {
+  id: number;
+  nom: string;
+}
+
+/** CV : PDF uniquement, 5 Mo au plus (mêmes règles que l'API). */
+export const CV_TAILLE_MAX = 5 * 1024 * 1024;
 
 export interface CandidatureRequest {
   nom: string;
