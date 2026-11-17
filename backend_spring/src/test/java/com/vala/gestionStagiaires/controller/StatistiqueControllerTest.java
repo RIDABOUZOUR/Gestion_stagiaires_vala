@@ -37,6 +37,9 @@ class StatistiqueControllerTest {
     @Mock
     private com.vala.gestionStagiaires.service.SuiviStatistiqueService suiviStatistiqueService;
 
+    @Mock
+    private com.vala.gestionStagiaires.service.EvaluationService evaluationService;
+
     @InjectMocks
     private StatistiqueController controller;
 
@@ -130,5 +133,22 @@ class StatistiqueControllerTest {
                 .andExpect(jsonPath("$.stagiairesActifs").value(7))
                 .andExpect(jsonPath("$.stagesAEcheance").value(1))
                 .andExpect(jsonPath("$.joursEcheance").value(30));
+    }
+
+    @Test
+    @DisplayName("GET /statistiques/evaluations -> bilan des évaluations")
+    void evaluations() throws Exception {
+        Map<String, Long> repartition = new LinkedHashMap<>();
+        repartition.put("< 10", 0L);
+        repartition.put("16 et plus", 2L);
+        when(evaluationService.statistiques()).thenReturn(new com.vala.gestionStagiaires.DTOs.evaluation.EvaluationStatistiques(
+                2, 16.5, 100.0, 1, Map.of("Autonomie", 4.5), repartition,
+                Map.of("Informatique", 16.5), Map.of("Martin Paul", 16.5), Map.of("Génie Info", 16.5)));
+
+        mockMvc.perform(get("/statistiques/evaluations"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.noteMoyenne").value(16.5))
+                .andExpect(jsonPath("$.stagiairesTerminesSansEvaluation").value(1))
+                .andExpect(jsonPath("$.repartitionNotes['16 et plus']").value(2));
     }
 }

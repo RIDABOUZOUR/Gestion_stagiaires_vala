@@ -13,7 +13,9 @@ import com.vala.gestionStagiaires.entities.Stagiaire;
 import com.vala.gestionStagiaires.exceptions.BusinessRuleException;
 import com.vala.gestionStagiaires.exceptions.ResourceNotFoundException;
 import com.vala.gestionStagiaires.exceptions.StagiaireNotFoundException;
+import com.vala.gestionStagiaires.repository.AttestationRepository;
 import com.vala.gestionStagiaires.repository.DepartementRepository;
+import com.vala.gestionStagiaires.repository.EvaluationRepository;
 import com.vala.gestionStagiaires.repository.PresenceRepository;
 import com.vala.gestionStagiaires.repository.RapportHebdomadaireRepository;
 import com.vala.gestionStagiaires.repository.StageRepository;
@@ -41,6 +43,8 @@ public class StagiaireServiceImpl implements StagiaireService {
     private final ReglesMetierProperties regles;
     private final PresenceRepository presenceRepository;
     private final RapportHebdomadaireRepository rapportRepository;
+    private final EvaluationRepository evaluationRepository;
+    private final AttestationRepository attestationRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -66,8 +70,14 @@ public class StagiaireServiceImpl implements StagiaireService {
         if (!stagiaireRepository.existsById(id)) {
             throw new StagiaireNotFoundException(id);
         }
-        // Le suivi (présences, rapports) n'a pas de sens sans le stagiaire.
+        // Une attestation délivrée est un document officiel : on garde sa trace.
+        if (attestationRepository.existsByStagiaireId(id)) {
+            throw new BusinessRuleException(
+                    "Impossible de supprimer ce stagiaire : une attestation de stage lui a été délivrée.");
+        }
+        // Le suivi (présences, rapports, évaluation) n'a pas de sens sans le stagiaire.
         presenceRepository.supprimerParStagiaire(id);
+        evaluationRepository.supprimerParStagiaire(id);
         rapportRepository.supprimerParStagiaire(id);
         stagiaireRepository.deleteById(id);
     }

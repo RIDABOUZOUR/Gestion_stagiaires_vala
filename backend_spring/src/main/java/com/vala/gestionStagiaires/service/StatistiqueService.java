@@ -14,7 +14,7 @@ import java.util.Map;
 public interface StatistiqueService {
 
     /** Libellé utilisé quand la donnée n'est pas renseignée (null ou vide). */
-    String NON_RENSEIGNE = "Non renseigné";
+    String NON_RENSEIGNE = StatistiquesUtils.NON_RENSEIGNE;
 
     /** Horizon par défaut des stages « à échéance », en jours. */
     int JOURS_ECHEANCE_PAR_DEFAUT = 30;

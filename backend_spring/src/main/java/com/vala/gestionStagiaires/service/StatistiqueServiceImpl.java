@@ -17,10 +17,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.LocalDate;
-import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -126,9 +124,8 @@ public class StatistiqueServiceImpl implements StatistiqueService {
         return value == null ? "" : value.trim();
     }
 
-    /** null ou vide → « Non renseigné ». */
     private static String libelle(String valeur) {
-        return valeur == null || valeur.isBlank() ? NON_RENSEIGNE : valeur.trim();
+        return StatistiquesUtils.libelle(valeur);
     }
 
     /**
@@ -142,12 +139,7 @@ public class StatistiqueServiceImpl implements StatistiqueService {
                 Long::sum));
     }
 
-    /** Effectif décroissant puis libellé ; l'ordre est conservé dans le JSON. */
     private static Map<String, Long> trier(Map<String, Long> valeurs) {
-        return valeurs.entrySet().stream()
-                .sorted(Map.Entry.<String, Long>comparingByValue(Comparator.reverseOrder())
-                        .thenComparing(Map.Entry.comparingByKey()))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
-                        (a, b) -> a, LinkedHashMap::new));
+        return StatistiquesUtils.trierDecroissant(valeurs);
     }
 }

@@ -26,6 +26,8 @@ public class CorsConfig implements WebMvcConfigurer {
                 .allowedOrigins(allowedOrigins)
                 .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
+                // Lisibles par le front : nom du fichier téléchargé et numéro d'attestation.
+                .exposedHeaders("Content-Disposition", "X-Attestation-Numero")
                 .allowCredentials(true)
                 .maxAge(3600);
     }

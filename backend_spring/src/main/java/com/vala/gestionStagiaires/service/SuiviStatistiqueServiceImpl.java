@@ -111,12 +111,8 @@ public class SuiviStatistiqueServiceImpl implements SuiviStatistiqueService {
 
     // ------------------------------------------------------------------
 
-    /** Pourcentage avec une décimale, ou {@code null} si le dénominateur est nul. */
     static Double pourcentage(long numerateur, long denominateur) {
-        if (denominateur == 0) {
-            return null;
-        }
-        return Math.round(1000.0 * numerateur / denominateur) / 10.0;
+        return StatistiquesUtils.pourcentage(numerateur, denominateur);
     }
 
     private static String nomComplet(Encadrant e) {

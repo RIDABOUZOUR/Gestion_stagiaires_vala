@@ -2,9 +2,11 @@ package com.vala.gestionStagiaires.controller;
 
 import com.vala.gestionStagiaires.DTOs.ResumeStatistiques;
 import com.vala.gestionStagiaires.DTOs.StageDto;
+import com.vala.gestionStagiaires.DTOs.evaluation.EvaluationStatistiques;
 import com.vala.gestionStagiaires.DTOs.suivi.AssiduiteStatistiques;
 import com.vala.gestionStagiaires.DTOs.suivi.RapportEnRetard;
 import com.vala.gestionStagiaires.enums.StageStatus;
+import com.vala.gestionStagiaires.service.EvaluationService;
 import com.vala.gestionStagiaires.service.StatistiqueService;
 import com.vala.gestionStagiaires.service.SuiviStatistiqueService;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +30,7 @@ public class StatistiqueController {
 
     private final StatistiqueService statistiqueService;
     private final SuiviStatistiqueService suiviStatistiqueService;
+    private final EvaluationService evaluationService;
 
     @GetMapping("/departements")
     public ResponseEntity<Map<String, Long>> parDepartement() {
@@ -79,5 +82,13 @@ public class StatistiqueController {
     public ResponseEntity<List<RapportEnRetard>> rapportsEnRetard(
             @RequestParam(defaultValue = "" + SuiviStatistiqueService.JOURS_SANS_RAPPORT_PAR_DEFAUT) int jours) {
         return ResponseEntity.ok(suiviStatistiqueService.rapportsEnRetard(jours));
+    }
+
+    // ---- Évaluations ----------------------------------------------------
+
+    /** Notes moyennes (globales, par compétence, département, encadrant, filière), tranches et recommandations. */
+    @GetMapping("/evaluations")
+    public ResponseEntity<EvaluationStatistiques> evaluations() {
+        return ResponseEntity.ok(evaluationService.statistiques());
     }
 }
