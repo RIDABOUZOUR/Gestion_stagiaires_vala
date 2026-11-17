@@ -1,8 +1,10 @@
 package com.vala.gestionStagiaires.service;
 
 import com.vala.gestionStagiaires.DTOs.DepartementDto;
+import com.vala.gestionStagiaires.DTOs.PageResponse;
 import com.vala.gestionStagiaires.DTOs.StageDto;
 import com.vala.gestionStagiaires.DTOs.StagiaireDto;
+import com.vala.gestionStagiaires.DTOs.StagiaireFiltre;
 import com.vala.gestionStagiaires.Mappers.StagiaireMapper;
 import com.vala.gestionStagiaires.config.ReglesMetierProperties;
 import com.vala.gestionStagiaires.entities.Departement;
@@ -14,7 +16,9 @@ import com.vala.gestionStagiaires.exceptions.StagiaireNotFoundException;
 import com.vala.gestionStagiaires.repository.DepartementRepository;
 import com.vala.gestionStagiaires.repository.StageRepository;
 import com.vala.gestionStagiaires.repository.StagiaireRepository;
+import com.vala.gestionStagiaires.repository.specification.StagiaireSpecifications;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -108,6 +112,14 @@ public class StagiaireServiceImpl implements StagiaireService {
                 .stream()
                 .map(mapper::fromStagiaire)
                 .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<StagiaireDto> rechercherStagiaires(StagiaireFiltre filtre, Pageable pageable) {
+        return PageResponse.of(stagiaireRepository
+                .findAll(StagiaireSpecifications.avecFiltre(filtre), pageable)
+                .map(mapper::fromStagiaire));
     }
 
     // ------------------------------------------------------------------

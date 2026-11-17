@@ -1,10 +1,16 @@
 package com.vala.gestionStagiaires.controller;
 
+import com.vala.gestionStagiaires.DTOs.PageResponse;
 import com.vala.gestionStagiaires.DTOs.StageDto;
+import com.vala.gestionStagiaires.DTOs.StageFiltre;
 import com.vala.gestionStagiaires.enums.StageStatus;
 import com.vala.gestionStagiaires.service.StageService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.data.web.SortDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -25,6 +31,19 @@ public class StageController {
     public ResponseEntity<StageDto> addStage(@Valid @RequestBody StageDto stageDto){
         StageDto created = stageService.addStage(stageDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
+    }
+
+    /**
+     * Recherche multicritère paginée, ex. :
+     * {@code /stages/page?keyword=ia&status=EN_COURS&encadrantId=1&page=0&size=20&sort=dateDebut,desc}
+     */
+    @GetMapping("/stages/page")
+    public ResponseEntity<PageResponse<StageDto>> rechercherStages(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) StageStatus status,
+            @RequestParam(required = false) Long encadrantId,
+            @PageableDefault(size = 20) @SortDefault(sort = "dateDebut", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(stageService.rechercherStages(new StageFiltre(keyword, status, encadrantId), pageable));
     }
 
     @GetMapping("/stages/search")

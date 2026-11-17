@@ -11,7 +11,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
 @Service
 @Transactional
@@ -23,13 +22,9 @@ public class EncadrantServiceImpl implements EncadrantService {
     @Override
     @Transactional(readOnly = true)
     public List<EncadrantDto> getEncadrant() {
-        List<Encadrant> encadrants = encadrantRepository.findAll();
-        List<EncadrantDto> encadrantDtos = new ArrayList<>();
-        for (Encadrant encadrant : encadrants) {
-            EncadrantDto encadrantDto = encadrantMapper.fromEncadrant(encadrant);
-            encadrantDtos.add(encadrantDto);
-        }
-        return encadrantDtos;
+        return encadrantRepository.findAll().stream()
+                .map(encadrantMapper::fromEncadrant)
+                .toList();
     }
 
     @Override
@@ -43,13 +38,9 @@ public class EncadrantServiceImpl implements EncadrantService {
     @Override
     @Transactional(readOnly = true)
     public List<EncadrantDto> searchEncadrant(String keyword) {
-        List<Encadrant> encadrants = encadrantRepository.findByNomIgnoreCaseContainingOrPrenomIgnoreCaseContaining(keyword,keyword);
-        List<EncadrantDto> encadrantDtos = new ArrayList<>();
-        for (Encadrant encadrant : encadrants) {
-            EncadrantDto encadrantDto = encadrantMapper.fromEncadrant(encadrant);
-            encadrantDtos.add(encadrantDto);
-        }
-        return encadrantDtos;
+        return encadrantRepository.findByNomIgnoreCaseContainingOrPrenomIgnoreCaseContaining(keyword,keyword).stream()
+                .map(encadrantMapper::fromEncadrant)
+                .toList();
     }
 
     @Override

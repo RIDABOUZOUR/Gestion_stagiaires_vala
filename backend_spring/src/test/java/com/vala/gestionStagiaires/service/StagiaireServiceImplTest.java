@@ -1,6 +1,8 @@
 package com.vala.gestionStagiaires.service;
 
 import com.vala.gestionStagiaires.DTOs.DepartementDto;
+import com.vala.gestionStagiaires.DTOs.PageResponse;
+import com.vala.gestionStagiaires.DTOs.StagiaireFiltre;
 import com.vala.gestionStagiaires.DTOs.StageDto;
 import com.vala.gestionStagiaires.DTOs.StagiaireDto;
 import com.vala.gestionStagiaires.Mappers.StagiaireMapper;
@@ -22,6 +24,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -370,5 +376,26 @@ class StagiaireServiceImplTest {
         stagiaireService.addStagiare(input);
 
         verify(stagiaireRepository).save(toSave);
+    }
+
+    @Test
+    @DisplayName("rechercherStagiaires() mappe la page et conserve les métadonnées")
+    @SuppressWarnings("unchecked")
+    void rechercherStagiaires_shouldMapPage() {
+        PageRequest pageable = PageRequest.of(1, 2);
+        Stagiaire s = entity(3L, "Rida", "Bouzour");
+        StagiaireDto d = dto(3L, "Rida", "Bouzour");
+        when(stagiaireRepository.findAll(any(Specification.class), org.mockito.ArgumentMatchers.eq(pageable)))
+                .thenReturn(new PageImpl<>(List.of(s), pageable, 5));
+        when(mapper.fromStagiaire(s)).thenReturn(d);
+
+        PageResponse<StagiaireDto> page = stagiaireService.rechercherStagiaires(
+                new StagiaireFiltre("rid", null, null, null, null), pageable);
+
+        assertThat(page.content()).containsExactly(d);
+        assertThat(page.page()).isEqualTo(1);
+        assertThat(page.size()).isEqualTo(2);
+        assertThat(page.totalElements()).isEqualTo(5);
+        assertThat(page.totalPages()).isEqualTo(3);
     }
 }

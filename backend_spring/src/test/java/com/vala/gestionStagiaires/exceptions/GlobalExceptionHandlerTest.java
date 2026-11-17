@@ -116,4 +116,18 @@ class GlobalExceptionHandlerTest {
                 .containsEntry("status", 409)
                 .containsEntry("message", "Règle violée");
     }
+
+    @Test
+    @DisplayName("PropertyReferenceException (tri inconnu) -> 400")
+    void handlePropertyReference_shouldReturn400() {
+        org.springframework.data.mapping.PropertyReferenceException ex =
+                new org.springframework.data.mapping.PropertyReferenceException("inconnu",
+                        org.springframework.data.util.TypeInformation.of(com.vala.gestionStagiaires.entities.Stagiaire.class),
+                        java.util.List.of());
+
+        ResponseEntity<Map<String, Object>> response = handler.handlePropertyReference(ex);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody()).containsEntry("message", "Tri invalide : propriété inconnue « inconnu ».");
+    }
 }

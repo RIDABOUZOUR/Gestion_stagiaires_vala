@@ -1,7 +1,9 @@
 package com.vala.gestionStagiaires.controller;
 
 import com.vala.gestionStagiaires.DTOs.EncadrantDto;
+import com.vala.gestionStagiaires.DTOs.PageResponse;
 import com.vala.gestionStagiaires.DTOs.StageDto;
+import com.vala.gestionStagiaires.DTOs.StageFiltre;
 import com.vala.gestionStagiaires.enums.StageStatus;
 import com.vala.gestionStagiaires.exceptions.BusinessRuleException;
 import com.vala.gestionStagiaires.exceptions.GlobalExceptionHandler;
@@ -12,8 +14,12 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -54,6 +60,7 @@ class StageControllerTest {
         mockMvc = MockMvcBuilders.standaloneSetup(stageController)
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .setValidator(validator)
+                .setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())
                 .build();
     }
 
@@ -209,5 +216,25 @@ class StageControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.errors.sujet").exists());
         verifyNoInteractions(stageService);
+    }
+
+    @Test
+    @DisplayName("GET /stages/page -> 200, tri par défaut dateDebut décroissante")
+    void rechercherStages_shouldReturnPage() throws Exception {
+        when(stageService.rechercherStages(any(StageFiltre.class), any(Pageable.class)))
+                .thenReturn(new PageResponse<>(List.of(dto(1L, "Stage IA")), 0, 20, 1, 1));
+
+        mockMvc.perform(get("/stages/page").param("keyword", "ia").param("status", "EN_COURS").param("encadrantId", "3"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].sujet").value("Stage IA"))
+                .andExpect(jsonPath("$.totalElements").value(1));
+
+        ArgumentCaptor<StageFiltre> filtre = ArgumentCaptor.forClass(StageFiltre.class);
+        ArgumentCaptor<Pageable> pageable = ArgumentCaptor.forClass(Pageable.class);
+        verify(stageService).rechercherStages(filtre.capture(), pageable.capture());
+        org.assertj.core.api.Assertions.assertThat(filtre.getValue())
+                .isEqualTo(new StageFiltre("ia", StageStatus.EN_COURS, 3L));
+        org.assertj.core.api.Assertions.assertThat(pageable.getValue().getSort())
+                .isEqualTo(Sort.by(Sort.Direction.DESC, "dateDebut"));
     }
 }

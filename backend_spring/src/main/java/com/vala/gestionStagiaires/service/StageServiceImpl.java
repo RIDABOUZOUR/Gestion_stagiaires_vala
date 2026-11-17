@@ -1,7 +1,9 @@
 package com.vala.gestionStagiaires.service;
 
 import com.vala.gestionStagiaires.DTOs.EncadrantDto;
+import com.vala.gestionStagiaires.DTOs.PageResponse;
 import com.vala.gestionStagiaires.DTOs.StageDto;
+import com.vala.gestionStagiaires.DTOs.StageFiltre;
 import com.vala.gestionStagiaires.Mappers.StageMapper;
 import com.vala.gestionStagiaires.config.ReglesMetierProperties;
 import com.vala.gestionStagiaires.entities.Encadrant;
@@ -12,7 +14,9 @@ import com.vala.gestionStagiaires.exceptions.ResourceNotFoundException;
 import com.vala.gestionStagiaires.repository.EncadrantRepository;
 import com.vala.gestionStagiaires.repository.StageRepository;
 import com.vala.gestionStagiaires.repository.StagiaireRepository;
+import com.vala.gestionStagiaires.repository.specification.StageSpecifications;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -61,6 +65,14 @@ public class StageServiceImpl implements StageService {
         return stageRepository.findBySujetIgnoreCaseContaining(keyword).stream()
                 .map(stageMapper::fromStage)
                 .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<StageDto> rechercherStages(StageFiltre filtre, Pageable pageable) {
+        return PageResponse.of(stageRepository
+                .findAll(StageSpecifications.avecFiltre(filtre), pageable)
+                .map(stageMapper::fromStage));
     }
 
     @Override

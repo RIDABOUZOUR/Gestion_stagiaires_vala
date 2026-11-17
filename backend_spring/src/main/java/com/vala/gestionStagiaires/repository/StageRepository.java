@@ -2,12 +2,28 @@ package com.vala.gestionStagiaires.repository;
 
 import com.vala.gestionStagiaires.entities.Stage;
 import com.vala.gestionStagiaires.enums.StageStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 import java.time.LocalDate;
 import java.util.List;
 
-public interface StageRepository extends JpaRepository<Stage,Long> {
+public interface StageRepository extends JpaRepository<Stage,Long>, JpaSpecificationExecutor<Stage> {
+
+    /* L'encadrant est toujours mappé dans le DTO : chargé dans la même requête (évite le N+1). */
+    @Override
+    @EntityGraph(attributePaths = "encadrant")
+    List<Stage> findAll();
+
+    @Override
+    @EntityGraph(attributePaths = "encadrant")
+    Page<Stage> findAll(Specification<Stage> spec, Pageable pageable);
+
+    @EntityGraph(attributePaths = "encadrant")
     List<Stage> findBySujetIgnoreCaseContaining(String nomKeyword);
 
     /** Un encadrant a-t-il encore des stages ? (bloque sa suppression) */

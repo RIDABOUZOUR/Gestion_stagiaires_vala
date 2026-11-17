@@ -11,7 +11,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
 @Service
 @Transactional
@@ -23,13 +22,9 @@ public class DepartementServiceImpl implements DepartementService{
     @Override
     @Transactional(readOnly = true)
     public List<DepartementDto> getDepartement() {
-        List<Departement> departements = departementRepository.findAll();
-        List<DepartementDto> departementDtos = new ArrayList<>();
-        for (Departement departement : departements) {
-            DepartementDto departementDto = departementMapper.fromDepartement(departement);
-            departementDtos.add(departementDto);
-        }
-        return departementDtos;
+        return departementRepository.findAll().stream()
+                .map(departementMapper::fromDepartement)
+                .toList();
     }
 
     @Override
@@ -41,13 +36,9 @@ public class DepartementServiceImpl implements DepartementService{
     @Override
     @Transactional(readOnly = true)
     public List<DepartementDto> searchDepartement(String keyword) {
-        List<Departement> departements = departementRepository.findByNomIgnoreCaseContaining(keyword);
-        List<DepartementDto> departementDtos = new ArrayList<>();
-        for (Departement departement : departements) {
-            DepartementDto departementDto = departementMapper.fromDepartement(departement);
-            departementDtos.add(departementDto);
-        }
-        return departementDtos;
+        return departementRepository.findByNomIgnoreCaseContaining(keyword).stream()
+                .map(departementMapper::fromDepartement)
+                .toList();
     }
 
     @Override

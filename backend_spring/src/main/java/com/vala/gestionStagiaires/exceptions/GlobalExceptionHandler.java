@@ -1,6 +1,7 @@
 package com.vala.gestionStagiaires.exceptions;
 
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.mapping.PropertyReferenceException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -8,6 +9,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -35,6 +37,18 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<Map<String, Object>> handleUnreadable(HttpMessageNotReadableException ex) {
         return build(HttpStatus.BAD_REQUEST, "Corps de requête illisible ou format invalide.", null);
+    }
+
+    /** Paramètre de requête au mauvais format (ex. status=INCONNU, id=abc) → HTTP 400. */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<Map<String, Object>> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        return build(HttpStatus.BAD_REQUEST, "Paramètre invalide : " + ex.getName() + ".", null);
+    }
+
+    /** Tri sur une propriété inexistante (ex. sort=inconnu) → HTTP 400. */
+    @ExceptionHandler(PropertyReferenceException.class)
+    public ResponseEntity<Map<String, Object>> handlePropertyReference(PropertyReferenceException ex) {
+        return build(HttpStatus.BAD_REQUEST, "Tri invalide : propriété inconnue « " + ex.getPropertyName() + " ».", null);
     }
 
     /** Ressource inexistante → HTTP 404. */

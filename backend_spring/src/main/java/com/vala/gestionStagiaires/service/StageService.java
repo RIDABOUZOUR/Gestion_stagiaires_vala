@@ -1,7 +1,11 @@
 package com.vala.gestionStagiaires.service;
 
+import com.vala.gestionStagiaires.DTOs.PageResponse;
 import com.vala.gestionStagiaires.DTOs.StageDto;
+import com.vala.gestionStagiaires.DTOs.StageFiltre;
 import com.vala.gestionStagiaires.enums.StageStatus;
+
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
@@ -10,6 +14,10 @@ public interface StageService {
     StageDto addStage(StageDto stageDto);
 
     List<StageDto> searchStage(String keyword);
+
+    /** Recherche multicritère paginée (triable via {@code sort}). */
+    PageResponse<StageDto> rechercherStages(StageFiltre filtre, Pageable pageable);
+
     void deleteStage(Long id);
     StageDto updateStage(StageDto stageDto, Long id);
     StageDto getStageById(Long id);

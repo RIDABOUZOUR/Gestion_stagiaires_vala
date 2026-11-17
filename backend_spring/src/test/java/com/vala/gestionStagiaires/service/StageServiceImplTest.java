@@ -1,6 +1,8 @@
 package com.vala.gestionStagiaires.service;
 
 import com.vala.gestionStagiaires.DTOs.EncadrantDto;
+import com.vala.gestionStagiaires.DTOs.PageResponse;
+import com.vala.gestionStagiaires.DTOs.StageFiltre;
 import com.vala.gestionStagiaires.DTOs.StageDto;
 import com.vala.gestionStagiaires.Mappers.StageMapper;
 import com.vala.gestionStagiaires.config.ReglesMetierProperties;
@@ -22,6 +24,10 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.jpa.domain.Specification;
 
 import java.time.Clock;
 import java.time.LocalDate;
@@ -447,5 +453,22 @@ class StageServiceImplTest {
 
             verify(stageRepository, never()).countByEncadrantIdAndStatus(any(), any());
         }
+    }
+
+    @Test
+    @DisplayName("rechercherStages() mappe la page")
+    @SuppressWarnings("unchecked")
+    void rechercherStages_shouldMapPage() {
+        PageRequest pageable = PageRequest.of(0, 20);
+        Stage s = stageEntity(1L, "Stage IA", StageStatus.EN_COURS);
+        StageDto d = stageDto(1L, "Stage IA", StageStatus.EN_COURS);
+        when(stageRepository.findAll(any(Specification.class), org.mockito.ArgumentMatchers.eq(pageable)))
+                .thenReturn(new PageImpl<>(List.of(s), pageable, 1));
+        when(stageMapper.fromStage(s)).thenReturn(d);
+
+        PageResponse<StageDto> page = stageService.rechercherStages(new StageFiltre("ia", null, null), pageable);
+
+        assertThat(page.content()).containsExactly(d);
+        assertThat(page.totalElements()).isEqualTo(1);
     }
 }
