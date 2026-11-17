@@ -5,6 +5,9 @@ import { Stagiaire } from '../services/stagiaire';
 import { StagiaireModel } from '../models/stage.model';
 import { NotificationService } from '../shared/notification/notification.service';
 import { ConfirmService } from '../shared/confirm/confirm.service';
+import { AuthService } from '../services/auth';
+import { ExportService } from '../services/export';
+import { enregistrerFichier, messageErreurBlob } from '../shared/telechargement';
 
 @Component({
   selector: 'app-stagiaires',
@@ -22,7 +25,28 @@ export class Stagiaires implements OnInit {
     private readonly fb: FormBuilder,
     private readonly notifications: NotificationService,
     private readonly confirm: ConfirmService,
+    readonly auth: AuthService,
+    private readonly exportService: ExportService,
   ) {}
+
+  /** Création, modification et suppression : réservées à la gestion (ADMIN, RH). */
+  get peutGerer(): boolean {
+    return this.auth.aRole('ADMIN', 'RH');
+  }
+
+  exporting = false;
+
+  /** Export CSV avec le mot-clé de recherche courant. */
+  exporter(): void {
+    this.exporting = true;
+    this.exportService
+      .csv('stagiaires', { keyword: this.searchFormGroup.value.keyword })
+      .pipe(finalize(() => (this.exporting = false)))
+      .subscribe({
+        next: (r) => enregistrerFichier(r, 'stagiaires.csv'),
+        error: async (err) => this.notifications.error(await messageErreurBlob(err, "L'export a échoué.")),
+      });
+  }
 
   ngOnInit(): void {
     this.searchFormGroup = this.fb.group({ keyword: this.fb.control('') });

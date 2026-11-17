@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { StageModel } from '../models/stage.model';
+import { StageHistorique } from '../models/suivi.model';
 import { environment } from '../../environments/environment';
 
 @Injectable({
@@ -36,5 +37,14 @@ export class Stage {
 
   deleteStage(id: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/${id}`);
+  }
+
+  getHistorique(id: number): Observable<StageHistorique[]> {
+    return this.http.get<StageHistorique[]>(`${this.baseUrl}/${id}/historique`);
+  }
+
+  /** Action de cycle de vie : demarrer, terminer ou annuler. */
+  changerStatut(id: number, action: 'demarrer' | 'terminer' | 'annuler'): Observable<StageModel> {
+    return this.http.patch<StageModel>(`${this.baseUrl}/${id}/${action}`, null);
   }
 }

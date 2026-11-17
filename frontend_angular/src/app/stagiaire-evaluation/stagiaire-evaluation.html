@@ -1,0 +1,51 @@
+<p *ngIf="!disponible" class="rounded-lg bg-slate-50 px-4 py-6 text-center text-sm text-slate-600 ring-1 ring-slate-200">
+  L'évaluation sera disponible une fois le stage terminé.
+</p>
+
+<div *ngIf="disponible">
+  <div *ngIf="loading" class="p-6 text-center text-sm text-slate-500">Chargement…</div>
+
+  <form *ngIf="!loading" [formGroup]="form" (ngSubmit)="enregistrer()" class="space-y-5">
+    <p *ngIf="evaluation" class="text-xs text-slate-500">
+      Dernière mise à jour le {{ evaluation.dateEvaluation | date: 'dd/MM/yyyy' }}.
+    </p>
+
+    <div class="max-w-xs">
+      <label class="label" for="noteGlobale">Note globale (sur 20) <span class="text-rose-500">*</span></label>
+      <input id="noteGlobale" type="number" min="0" max="20" step="0.1" formControlName="noteGlobale" class="input" [class.input-invalid]="isInvalid('noteGlobale')" />
+      <p class="field-error" *ngIf="isInvalid('noteGlobale')">Une note entre 0 et 20, une décimale au plus.</p>
+    </div>
+
+    <fieldset class="space-y-3">
+      <legend class="label">Compétences (1 = insuffisant, 5 = excellent)</legend>
+      <div *ngFor="let c of competences" class="flex flex-wrap items-center justify-between gap-2">
+        <span class="text-sm text-slate-700">{{ c.libelle }}</span>
+        <div class="flex gap-1" role="radiogroup" [attr.aria-label]="c.libelle">
+          <label
+            *ngFor="let n of niveaux"
+            class="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg text-sm font-semibold ring-1 transition"
+            [ngClass]="form.get(c.champ)?.value === n ? 'bg-indigo-600 text-white ring-indigo-600' : 'bg-white text-slate-600 ring-slate-200 hover:ring-indigo-400'">
+            <input type="radio" class="sr-only" [formControlName]="c.champ" [value]="n" />
+            {{ n }}
+          </label>
+        </div>
+      </div>
+    </fieldset>
+
+    <div>
+      <label class="label" for="appreciation">Appréciation</label>
+      <textarea id="appreciation" rows="4" formControlName="appreciation" class="input" [class.input-invalid]="isInvalid('appreciation')"></textarea>
+    </div>
+
+    <label class="flex items-center gap-2 text-sm text-slate-700">
+      <input type="checkbox" formControlName="recommande" class="h-4 w-4 rounded border-slate-300 text-indigo-600" />
+      Je recommande ce stagiaire
+    </label>
+
+    <div class="flex justify-end">
+      <button type="submit" class="btn btn-primary" [disabled]="enregistrement">
+        {{ enregistrement ? 'Enregistrement…' : (evaluation ? 'Mettre à jour' : "Enregistrer l'évaluation") }}
+      </button>
+    </div>
+  </form>
+</div>

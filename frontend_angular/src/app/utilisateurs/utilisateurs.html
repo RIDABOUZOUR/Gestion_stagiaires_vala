@@ -1,0 +1,101 @@
+<div class="card">
+  <div class="card-header flex-wrap gap-3">
+    <div class="flex items-center gap-3">
+      <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+        <app-icon name="user-group"></app-icon>
+      </span>
+      <div>
+        <h2 class="text-base font-semibold text-slate-900">Comptes utilisateurs</h2>
+        <p class="text-xs text-slate-500">{{ utilisateurs.length }} compte(s)</p>
+      </div>
+    </div>
+    <button *ngIf="!formulaireOuvert" type="button" class="btn btn-primary" (click)="formulaireOuvert = true">
+      <app-icon name="plus-circle" size="h-4 w-4"></app-icon>
+      Nouveau compte
+    </button>
+  </div>
+
+  <form *ngIf="formulaireOuvert" [formGroup]="form" (ngSubmit)="creer()" class="grid gap-4 border-b border-slate-100 bg-slate-50 p-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div>
+      <label class="label" for="email">Email</label>
+      <input id="email" type="email" formControlName="email" class="input" [class.input-invalid]="isInvalid('email')" />
+    </div>
+    <div>
+      <label class="label" for="motDePasse">Mot de passe initial</label>
+      <input id="motDePasse" type="password" formControlName="motDePasse" class="input" autocomplete="new-password" [class.input-invalid]="isInvalid('motDePasse')" />
+      <p class="field-error" *ngIf="isInvalid('motDePasse')">8 à 72 caractères.</p>
+    </div>
+    <div>
+      <label class="label" for="role">Rôle</label>
+      <select id="role" formControlName="role" class="input">
+        <option *ngFor="let r of roles" [value]="r">{{ libellesRole[r] }}</option>
+      </select>
+    </div>
+    <div *ngIf="form.value.role === 'ENCADRANT'">
+      <label class="label" for="encadrantId">Fiche encadrant</label>
+      <select id="encadrantId" formControlName="encadrantId" class="input">
+        <option [ngValue]="null">— Choisir —</option>
+        <option *ngFor="let e of encadrantsDisponibles()" [ngValue]="e.id">{{ e.prenom }} {{ e.nom }}</option>
+      </select>
+    </div>
+    <div class="flex items-end justify-end gap-2 sm:col-span-2 lg:col-span-4">
+      <button type="button" class="btn btn-secondary" (click)="formulaireOuvert = false">Annuler</button>
+      <button type="submit" class="btn btn-primary" [disabled]="enregistrement">Créer le compte</button>
+    </div>
+  </form>
+
+  <div *ngIf="loading" class="p-12 text-center text-sm text-slate-500">Chargement…</div>
+
+  <div *ngIf="!loading" class="overflow-x-auto">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Email</th>
+          <th>Rôle</th>
+          <th>Encadrant lié</th>
+          <th>Actif</th>
+          <th class="text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <ng-container *ngFor="let u of utilisateurs">
+          <tr>
+            <td class="font-medium text-slate-900">
+              {{ u.email }}
+              <span *ngIf="estMoi(u)" class="badge badge-slate ml-1">vous</span>
+            </td>
+            <td>
+              <select class="input py-1" [ngModel]="u.role" (ngModelChange)="modifier(u, { role: $event })" [attr.aria-label]="'Rôle de ' + u.email">
+                <option *ngFor="let r of roles" [value]="r">{{ libellesRole[r] }}</option>
+              </select>
+            </td>
+            <td>{{ u.encadrantNom || '—' }}</td>
+            <td>
+              <input type="checkbox" class="h-4 w-4 rounded border-slate-300 text-indigo-600" [checked]="u.actif"
+                     [disabled]="estMoi(u)" (change)="modifier(u, { actif: !u.actif })" [attr.aria-label]="'Compte actif : ' + u.email" />
+            </td>
+            <td class="text-right">
+              <div class="flex justify-end gap-1">
+                <button type="button" class="btn btn-ghost py-1 text-xs" (click)="reinitialisation = { id: u.id, motDePasse: '' }">Mot de passe</button>
+                <button *ngIf="!estMoi(u)" type="button" class="btn-icon text-rose-600 hover:bg-rose-50" (click)="supprimer(u)" aria-label="Supprimer le compte">
+                  <app-icon name="trash"></app-icon>
+                </button>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="reinitialisation?.id === u.id">
+            <td colspan="5" class="bg-slate-50">
+              <div class="flex flex-wrap items-center gap-2">
+                <label class="text-sm text-slate-600" [attr.for]="'mdp-' + u.id">Nouveau mot de passe pour {{ u.email }}</label>
+                <input [id]="'mdp-' + u.id" type="password" class="input max-w-xs" autocomplete="new-password"
+                       [(ngModel)]="reinitialisation!.motDePasse" />
+                <button type="button" class="btn btn-secondary" (click)="reinitialisation = null">Annuler</button>
+                <button type="button" class="btn btn-primary" (click)="changerMotDePasse()">Enregistrer</button>
+              </div>
+            </td>
+          </tr>
+        </ng-container>
+      </tbody>
+    </table>
+  </div>
+</div>

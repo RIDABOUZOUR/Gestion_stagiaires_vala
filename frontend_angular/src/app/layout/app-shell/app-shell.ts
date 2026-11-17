@@ -28,6 +28,8 @@ export class AppShell implements OnInit, OnDestroy {
     { label: 'Stages', route: '/stages', icon: 'briefcase' },
     { label: 'Encadrants', route: '/encadrants', icon: 'identification' },
     { label: 'Départements', route: '/departements', icon: 'building-office' },
+    { label: 'Candidatures', route: '/candidatures', icon: 'user-plus', roles: ['ADMIN', 'RH'] },
+    { label: 'Utilisateurs', route: '/utilisateurs', icon: 'user-group', roles: ['ADMIN'] },
   ];
 
   private readonly routerSub = new Subscription();

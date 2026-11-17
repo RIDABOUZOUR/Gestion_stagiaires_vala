@@ -1,0 +1,91 @@
+<div [ngClass]="auth.estConnecte() ? '' : 'min-h-screen bg-slate-100 px-4 py-10'">
+  <div class="mx-auto max-w-3xl space-y-4">
+    <div *ngIf="!auth.estConnecte()" class="flex flex-col items-center gap-2 text-center">
+      <span class="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-lg shadow-indigo-900/30">
+        <app-icon name="building-office-2" size="h-6 w-6"></app-icon>
+      </span>
+      <h1 class="text-2xl font-bold tracking-tight text-slate-900">Déposer une candidature de stage</h1>
+      <a routerLink="/login" class="text-sm text-indigo-700 hover:underline">Vous avez un compte ? Connexion</a>
+    </div>
+
+    <div *ngIf="envoyee" class="card">
+      <div class="card-body space-y-3 text-center">
+        <p class="text-base font-semibold text-emerald-700">Candidature envoyée.</p>
+        <p class="text-sm text-slate-600">Elle sera étudiée par le service des ressources humaines.</p>
+        <button type="button" class="btn btn-secondary" (click)="recommencer()">Saisir une autre candidature</button>
+      </div>
+    </div>
+
+    <form *ngIf="!envoyee" [formGroup]="form" (ngSubmit)="envoyer()" class="card" novalidate>
+      <div class="card-body space-y-5">
+        <p *ngIf="erreur" class="rounded-lg bg-rose-50 px-4 py-3 text-sm text-rose-700 ring-1 ring-rose-200" role="alert">{{ erreur }}</p>
+
+        <div class="grid gap-5 sm:grid-cols-2">
+          <div>
+            <label class="label" for="nom">Nom <span class="text-rose-500">*</span></label>
+            <input id="nom" formControlName="nom" class="input" [class.input-invalid]="isInvalid('nom')" />
+            <p class="field-error" *ngIf="isInvalid('nom')">3 à 40 caractères.</p>
+          </div>
+          <div>
+            <label class="label" for="prenom">Prénom <span class="text-rose-500">*</span></label>
+            <input id="prenom" formControlName="prenom" class="input" [class.input-invalid]="isInvalid('prenom')" />
+            <p class="field-error" *ngIf="isInvalid('prenom')">3 à 40 caractères.</p>
+          </div>
+          <div>
+            <label class="label" for="email">Email <span class="text-rose-500">*</span></label>
+            <input id="email" type="email" formControlName="email" class="input" [class.input-invalid]="isInvalid('email')" />
+            <p class="field-error" *ngIf="isInvalid('email')">Un email valide est obligatoire.</p>
+          </div>
+          <div>
+            <label class="label" for="telephone">Téléphone</label>
+            <input id="telephone" type="tel" formControlName="telephone" class="input" [class.input-invalid]="isInvalid('telephone')" placeholder="0612345678" />
+            <p class="field-error" *ngIf="isInvalid('telephone')">10 chiffres (indicatif optionnel).</p>
+          </div>
+          <div>
+            <label class="label" for="sexe">Sexe <span class="text-rose-500">*</span></label>
+            <select id="sexe" formControlName="sexe" class="input" [class.input-invalid]="isInvalid('sexe')">
+              <option value="">— Choisir —</option>
+              <option *ngFor="let s of sexes" [value]="s">{{ s === 'FEMME' ? 'Femme' : 'Homme' }}</option>
+            </select>
+          </div>
+          <div>
+            <label class="label" for="dateNaissance">Date de naissance</label>
+            <input id="dateNaissance" type="date" formControlName="dateNaissance" class="input" />
+          </div>
+          <div>
+            <label class="label" for="organisme">École / organisme</label>
+            <input id="organisme" formControlName="organisme" class="input" />
+          </div>
+          <div>
+            <label class="label" for="filiere">Filière</label>
+            <input id="filiere" formControlName="filiere" class="input" />
+          </div>
+          <div>
+            <label class="label" for="niveau">Niveau</label>
+            <input id="niveau" formControlName="niveau" class="input" placeholder="Bac+3, Bac+5…" />
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="label" for="dateDebutSouhaitee">Début souhaité</label>
+              <input id="dateDebutSouhaitee" type="date" formControlName="dateDebutSouhaitee" class="input" />
+            </div>
+            <div>
+              <label class="label" for="dateFinSouhaitee">Fin souhaitée</label>
+              <input id="dateFinSouhaitee" type="date" formControlName="dateFinSouhaitee" class="input" />
+            </div>
+            <p class="field-error col-span-2" *ngIf="form.errors?.['periode']">La date de début doit précéder la date de fin.</p>
+          </div>
+        </div>
+
+        <div>
+          <label class="label" for="motivation">Motivation</label>
+          <textarea id="motivation" rows="5" formControlName="motivation" class="input"></textarea>
+        </div>
+
+        <div class="flex justify-end">
+          <button type="submit" class="btn btn-primary" [disabled]="envoi">{{ envoi ? 'Envoi…' : 'Envoyer la candidature' }}</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>

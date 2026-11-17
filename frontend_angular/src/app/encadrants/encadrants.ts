@@ -5,6 +5,7 @@ import { Encadrant } from '../services/encadrant';
 import { EncadrantModel } from '../models/stage.model';
 import { NotificationService } from '../shared/notification/notification.service';
 import { ConfirmService } from '../shared/confirm/confirm.service';
+import { AuthService } from '../services/auth';
 
 @Component({
   selector: 'app-encadrants',
@@ -22,7 +23,13 @@ export class Encadrants implements OnInit {
     private readonly fb: FormBuilder,
     private readonly notifications: NotificationService,
     private readonly confirm: ConfirmService,
+    readonly auth: AuthService,
   ) {}
+
+  /** Création, modification et suppression : réservées à la gestion (ADMIN, RH). */
+  get peutGerer(): boolean {
+    return this.auth.aRole('ADMIN', 'RH');
+  }
 
   ngOnInit(): void {
     this.searchFormGroup = this.fb.group({ keyword: this.fb.control('') });

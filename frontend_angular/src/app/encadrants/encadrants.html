@@ -9,7 +9,7 @@
         <p class="text-xs text-slate-500">{{ encadrants.length }} enregistrement(s)</p>
       </div>
     </div>
-    <a routerLink="/new-encadrant" class="btn btn-primary">
+    <a *ngIf="peutGerer" routerLink="/new-encadrant" class="btn btn-primary">
       <app-icon name="plus-circle" size="h-4 w-4"></app-icon>
       Ajouter
     </a>
@@ -65,13 +65,13 @@
           <td>{{ e.telephone || '—' }}</td>
           <td class="text-right">
             <div class="flex justify-end gap-1">
-              <a
+              <a *ngIf="peutGerer"
                 [routerLink]="['/edit-encadrant', e.id]"
                 class="btn-icon text-indigo-600 hover:bg-indigo-50"
                 aria-label="Modifier">
                 <app-icon name="pencil-square"></app-icon>
               </a>
-              <button
+              <button *ngIf="peutGerer"
                 type="button"
                 (click)="handleDeleteEncadrant(e)"
                 class="btn-icon text-rose-600 hover:bg-rose-50"
@@ -93,13 +93,13 @@
           <p class="truncate text-xs text-slate-500">{{ e.email }}</p>
         </div>
         <div class="flex shrink-0 gap-1">
-          <a
+          <a *ngIf="peutGerer"
             [routerLink]="['/edit-encadrant', e.id]"
             class="btn-icon text-indigo-600 hover:bg-indigo-50"
             aria-label="Modifier">
             <app-icon name="pencil-square"></app-icon>
           </a>
-          <button
+          <button *ngIf="peutGerer"
             type="button"
             (click)="handleDeleteEncadrant(e)"
             class="btn-icon text-rose-600 hover:bg-rose-50"

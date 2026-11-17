@@ -1,18 +1,110 @@
-<div class="grid gap-4 lg:grid-cols-2">
-  <div class="card" *ngFor="let config of charts">
-    <div class="card-header">
-      <div class="flex items-center gap-3">
-        <span
-          class="flex h-9 w-9 items-center justify-center rounded-lg"
-          [ngClass]="config.iconBg">
-          <app-icon [name]="config.icon"></app-icon>
+<div class="space-y-6">
+  <!-- Indicateurs clés -->
+  <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+    <div *ngFor="let i of indicateurs" class="card">
+      <div class="card-body flex items-center gap-4">
+        <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl" [ngClass]="i.couleur">
+          <app-icon [name]="i.icone"></app-icon>
         </span>
-        <h3 class="text-sm font-semibold text-slate-900">{{ config.title }}</h3>
+        <div class="min-w-0">
+          <p class="text-xs font-medium uppercase tracking-wide text-slate-500">{{ i.libelle }}</p>
+          <p class="text-2xl font-bold text-slate-900">{{ i.valeur }}</p>
+          <p *ngIf="i.detail" class="truncate text-xs text-slate-500">{{ i.detail }}</p>
+        </div>
       </div>
     </div>
-    <div class="card-body">
-      <div class="relative h-72">
-        <canvas #chartCanvas [id]="config.id"></canvas>
+  </div>
+
+  <!-- Alertes de suivi -->
+  <div class="grid gap-4 lg:grid-cols-2">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="text-sm font-semibold text-slate-900">Stages qui se terminent dans les 30 jours</h3>
+      </div>
+      <p *ngIf="!donnees?.echeances?.length" class="p-5 text-sm text-slate-500">Aucun stage à échéance.</p>
+      <ul class="divide-y divide-slate-100">
+        <li *ngFor="let s of donnees?.echeances">
+          <a [routerLink]="['/stages', s.id]" class="flex items-center justify-between gap-3 px-5 py-3 text-sm hover:bg-slate-50">
+            <span class="truncate font-medium text-slate-900">{{ s.sujet }}</span>
+            <span class="shrink-0 text-xs text-slate-500">fin le {{ s.dateFin | date: 'dd/MM/yyyy' }}</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h3 class="text-sm font-semibold text-slate-900">Rapports en retard (plus de 14 jours)</h3>
+      </div>
+      <p *ngIf="!donnees?.retards?.length" class="p-5 text-sm text-slate-500">Tous les stagiaires en cours sont à jour.</p>
+      <ul class="divide-y divide-slate-100">
+        <li *ngFor="let r of donnees?.retards">
+          <a [routerLink]="['/stagiaires', r.stagiaireId]" [queryParams]="{ onglet: 'rapports' }"
+             class="flex items-center justify-between gap-3 px-5 py-3 text-sm hover:bg-slate-50">
+            <span class="min-w-0">
+              <span class="block truncate font-medium text-slate-900">{{ r.prenom }} {{ r.nom }}</span>
+              <span class="block truncate text-xs text-slate-500">{{ r.sujetStage }} · {{ r.encadrant || '—' }}</span>
+            </span>
+            <span class="badge badge-rose shrink-0">{{ r.joursSansRapport }} j</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Graphiques (les canevas restent dans le DOM pour être dessinés après le chargement) -->
+  <div class="grid gap-4 lg:grid-cols-2">
+    <div class="card" *ngFor="let g of graphiques">
+      <div class="card-header">
+        <div class="flex items-center gap-3">
+          <span class="flex h-9 w-9 items-center justify-center rounded-lg" [ngClass]="g.couleur">
+            <app-icon [name]="g.icone"></app-icon>
+          </span>
+          <h3 class="text-sm font-semibold text-slate-900">{{ g.titre }}</h3>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="relative h-72">
+          <canvas #chartCanvas [id]="g.id"></canvas>
+          <p *ngIf="!loading && !aDesDonnees(g)" class="absolute inset-0 flex items-center justify-center text-sm text-slate-400">
+            Pas encore de données.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Durées et taux -->
+  <div class="card" *ngIf="donnees?.durees as d">
+    <div class="card-header flex-wrap gap-2">
+      <h3 class="text-sm font-semibold text-slate-900">Durées et issues des stages</h3>
+      <p class="text-xs text-slate-500">
+        Global : durée moyenne {{ d.global.dureeMoyenneJours ?? '—' }} j ·
+        achèvement {{ d.global.tauxAchevement ?? '—' }} % · annulation {{ d.global.tauxAnnulation ?? '—' }} %
+      </p>
+    </div>
+    <div class="divide-y divide-slate-100">
+      <div *ngFor="let bloc of tableauxDurees" class="overflow-x-auto">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>{{ bloc.titre }}</th>
+              <th class="text-right">Stages</th>
+              <th class="text-right">Durée moy.</th>
+              <th class="text-right">Achèvement</th>
+              <th class="text-right">Annulation</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let l of bloc.lignes">
+              <td class="font-medium text-slate-900">{{ l.nom }}</td>
+              <td class="text-right">{{ l.ind.nombreStages }}</td>
+              <td class="text-right">{{ l.ind.dureeMoyenneJours !== null ? l.ind.dureeMoyenneJours + ' j' : '—' }}</td>
+              <td class="text-right">{{ l.ind.tauxAchevement !== null ? l.ind.tauxAchevement + ' %' : '—' }}</td>
+              <td class="text-right">{{ l.ind.tauxAnnulation !== null ? l.ind.tauxAnnulation + ' %' : '—' }}</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
   </div>

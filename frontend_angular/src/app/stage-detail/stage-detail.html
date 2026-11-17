@@ -1,0 +1,97 @@
+<div *ngIf="loading" class="flex items-center justify-center gap-3 p-12 text-sm text-slate-500">
+  <span class="h-5 w-5 animate-spin rounded-full border-2 border-slate-300 border-t-indigo-600"></span>
+  Chargement…
+</div>
+
+<div *ngIf="!loading && stage" class="mx-auto max-w-5xl space-y-4">
+  <a routerLink="/stages" class="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-900">
+    <app-icon name="arrow-left" size="h-4 w-4"></app-icon>
+    Retour aux stages
+  </a>
+
+  <div class="card">
+    <div class="card-header flex-wrap gap-3">
+      <div class="flex min-w-0 items-center gap-3">
+        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+          <app-icon name="briefcase"></app-icon>
+        </span>
+        <div class="min-w-0">
+          <h2 class="truncate text-base font-semibold text-slate-900">{{ stage.sujet }}</h2>
+          <span class="badge mt-1" [ngClass]="statuts[stage.status].badge">{{ statuts[stage.status].libelle }}</span>
+        </div>
+      </div>
+      <div *ngIf="peutGerer" class="flex flex-wrap gap-2">
+        <button
+          *ngFor="let a of actions"
+          type="button"
+          class="btn"
+          [ngClass]="a.classe"
+          [disabled]="enCours"
+          (click)="executer(a)">
+          {{ a.libelle }}
+        </button>
+        <a [routerLink]="['/edit-stage', stage.id]" class="btn btn-ghost">
+          <app-icon name="pencil-square" size="h-4 w-4"></app-icon>
+          Modifier
+        </a>
+      </div>
+    </div>
+    <dl class="card-body grid gap-4 text-sm sm:grid-cols-3">
+      <div>
+        <dt class="text-slate-400">Début</dt>
+        <dd class="font-medium text-slate-800">{{ stage.dateDebut | date: 'dd/MM/yyyy' }}</dd>
+      </div>
+      <div>
+        <dt class="text-slate-400">Fin</dt>
+        <dd class="font-medium text-slate-800">{{ stage.dateFin | date: 'dd/MM/yyyy' }}</dd>
+      </div>
+      <div>
+        <dt class="text-slate-400">Encadrant</dt>
+        <dd class="font-medium text-slate-800">{{ stage.encadrant.prenom }} {{ stage.encadrant.nom }}</dd>
+      </div>
+    </dl>
+  </div>
+
+  <div class="grid gap-4 lg:grid-cols-2">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="text-sm font-semibold text-slate-900">Stagiaires ({{ stagiaires.length }})</h3>
+      </div>
+      <p *ngIf="stagiaires.length === 0" class="p-6 text-sm text-slate-500">Aucun stagiaire affecté à ce stage.</p>
+      <ul class="divide-y divide-slate-100">
+        <li *ngFor="let s of stagiaires">
+          <a [routerLink]="['/stagiaires', s.id]" class="flex items-center justify-between gap-3 px-5 py-3 hover:bg-slate-50">
+            <span>
+              <span class="block text-sm font-medium text-slate-900">{{ s.prenom }} {{ s.nom }}</span>
+              <span class="block text-xs text-slate-500">{{ s.email }}</span>
+            </span>
+            <app-icon name="arrow-right" size="h-4 w-4" class="text-slate-400"></app-icon>
+          </a>
+        </li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h3 class="text-sm font-semibold text-slate-900">Historique des statuts</h3>
+      </div>
+      <p *ngIf="historique.length === 0" class="p-6 text-sm text-slate-500">Aucun changement enregistré.</p>
+      <ol class="card-body space-y-4">
+        <li *ngFor="let h of historique" class="flex gap-3">
+          <span
+            class="mt-1 h-2.5 w-2.5 shrink-0 rounded-full"
+            [ngClass]="h.origine === 'AUTOMATIQUE' ? 'bg-sky-400' : 'bg-indigo-500'"></span>
+          <div class="text-sm">
+            <p class="text-slate-800">
+              {{ libelleStatut(h.ancienStatut) }} → <span class="font-semibold">{{ libelleStatut(h.nouveauStatut) }}</span>
+            </p>
+            <p class="text-xs text-slate-500">
+              {{ h.dateChangement | date: 'dd/MM/yyyy à HH:mm' }} ·
+              {{ h.origine === 'AUTOMATIQUE' ? 'mise à jour automatique' : (h.auteur || 'manuel') }}
+            </p>
+          </div>
+        </li>
+      </ol>
+    </div>
+  </div>
+</div>

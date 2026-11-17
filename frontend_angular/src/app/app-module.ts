@@ -27,6 +27,15 @@ import { EditEncadrant } from './edit-encadrant/edit-encadrant';
 import { EditStage } from './edit-stage/edit-stage';
 import { EditStagiaire } from './edit-stagiaire/edit-stagiaire';
 import { Login } from './login/login';
+import { StageDetail } from './stage-detail/stage-detail';
+import { StagiaireDetail } from './stagiaire-detail/stagiaire-detail';
+import { StagiairePresences } from './stagiaire-presences/stagiaire-presences';
+import { StagiaireRapports } from './stagiaire-rapports/stagiaire-rapports';
+import { StagiaireEvaluation } from './stagiaire-evaluation/stagiaire-evaluation';
+import { Candidatures } from './candidatures/candidatures';
+import { CandidatureDetail } from './candidature-detail/candidature-detail';
+import { Postuler } from './postuler/postuler';
+import { Utilisateurs } from './utilisateurs/utilisateurs';
 import { authInterceptor } from './shared/auth/auth.interceptor';
 
 @NgModule({
@@ -49,6 +58,15 @@ import { authInterceptor } from './shared/auth/auth.interceptor';
     EditStage,
     EditStagiaire,
     Login,
+    StageDetail,
+    StagiaireDetail,
+    StagiairePresences,
+    StagiaireRapports,
+    StagiaireEvaluation,
+    Candidatures,
+    CandidatureDetail,
+    Postuler,
+    Utilisateurs,
   ],
   imports: [
     BrowserModule,

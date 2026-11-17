@@ -1,0 +1,98 @@
+<div *ngIf="loading" class="flex items-center justify-center gap-3 p-12 text-sm text-slate-500">
+  <span class="h-5 w-5 animate-spin rounded-full border-2 border-slate-300 border-t-indigo-600"></span>
+  Chargement…
+</div>
+
+<div *ngIf="!loading && candidature as c" class="mx-auto max-w-4xl space-y-4">
+  <a routerLink="/candidatures" class="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-900">
+    <app-icon name="arrow-left" size="h-4 w-4"></app-icon>
+    Retour aux candidatures
+  </a>
+
+  <div class="card">
+    <div class="card-header flex-wrap gap-3">
+      <div class="min-w-0">
+        <h2 class="truncate text-base font-semibold text-slate-900">{{ c.prenom }} {{ c.nom }}</h2>
+        <p class="text-xs text-slate-500">Reçue le {{ c.dateSoumission | date: 'dd/MM/yyyy à HH:mm' }}</p>
+      </div>
+      <span class="badge" [ngClass]="statuts[c.statut].badge">{{ statuts[c.statut].libelle }}</span>
+    </div>
+
+    <dl class="card-body grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-3">
+      <div><dt class="text-slate-400">Email</dt><dd class="font-medium text-slate-800">{{ c.email }}</dd></div>
+      <div><dt class="text-slate-400">Téléphone</dt><dd class="font-medium text-slate-800">{{ c.telephone || '—' }}</dd></div>
+      <div><dt class="text-slate-400">Date de naissance</dt><dd class="font-medium text-slate-800">{{ c.dateNaissance ? (c.dateNaissance | date: 'dd/MM/yyyy') : '—' }}</dd></div>
+      <div><dt class="text-slate-400">Organisme</dt><dd class="font-medium text-slate-800">{{ c.organisme || '—' }}</dd></div>
+      <div><dt class="text-slate-400">Filière / niveau</dt><dd class="font-medium text-slate-800">{{ c.filiere || '—' }} {{ c.niveau ? '(' + c.niveau + ')' : '' }}</dd></div>
+      <div><dt class="text-slate-400">Département souhaité</dt><dd class="font-medium text-slate-800">{{ c.departementSouhaiteNom || '—' }}</dd></div>
+      <div class="sm:col-span-2 lg:col-span-3">
+        <dt class="text-slate-400">Période souhaitée</dt>
+        <dd class="font-medium text-slate-800">
+          <ng-container *ngIf="c.dateDebutSouhaitee; else nd">du {{ c.dateDebutSouhaitee | date: 'dd/MM/yyyy' }} au {{ c.dateFinSouhaitee | date: 'dd/MM/yyyy' }}</ng-container>
+          <ng-template #nd>—</ng-template>
+        </dd>
+      </div>
+      <div *ngIf="c.motivation" class="sm:col-span-2 lg:col-span-3">
+        <dt class="text-slate-400">Motivation</dt>
+        <dd class="whitespace-pre-line text-slate-800">{{ c.motivation }}</dd>
+      </div>
+      <div *ngIf="c.motifRefus" class="sm:col-span-2 lg:col-span-3">
+        <dt class="text-slate-400">Motif du refus</dt>
+        <dd class="text-rose-700">{{ c.motifRefus }}</dd>
+      </div>
+      <div *ngIf="c.stagiaireId" class="sm:col-span-2 lg:col-span-3">
+        <dt class="text-slate-400">Stagiaire créé</dt>
+        <dd><a [routerLink]="['/stagiaires', c.stagiaireId]" class="font-medium text-indigo-700 hover:underline">Voir la fiche du stagiaire</a></dd>
+      </div>
+    </dl>
+
+    <div class="flex flex-wrap justify-end gap-2 border-t border-slate-100 px-5 py-4">
+      <button *ngIf="c.statut !== 'ACCEPTEE'" type="button" class="btn btn-ghost text-rose-600" (click)="supprimer()">Supprimer</button>
+      <ng-container *ngIf="active">
+        <button type="button" class="btn btn-secondary" [disabled]="enCours" (click)="retirer()">Retirée par le candidat</button>
+        <button type="button" class="btn btn-danger" [disabled]="enCours" (click)="ouvrirRefus()">Refuser</button>
+        <button *ngIf="c.statut === 'SOUMISE'" type="button" class="btn btn-primary" [disabled]="enCours" (click)="etudier()">Mettre à l'étude</button>
+        <button *ngIf="c.statut === 'EN_ETUDE'" type="button" class="btn btn-primary" [disabled]="enCours" (click)="ouvrirAcceptation()">Accepter</button>
+      </ng-container>
+    </div>
+  </div>
+
+  <div *ngIf="panneau === 'refus'" class="card">
+    <div class="card-body space-y-3">
+      <label class="label" for="motif">Motif du refus <span class="text-rose-500">*</span></label>
+      <textarea id="motif" rows="3" class="input" [(ngModel)]="motif" maxlength="1000"></textarea>
+      <div class="flex justify-end gap-2">
+        <button type="button" class="btn btn-secondary" (click)="panneau = null">Annuler</button>
+        <button type="button" class="btn btn-danger" [disabled]="enCours" (click)="refuser()">Confirmer le refus</button>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="panneau === 'acceptation'" class="card">
+    <div class="card-body space-y-4">
+      <p class="text-sm text-slate-600">
+        Le stagiaire sera créé à partir de la candidature. Les règles habituelles s'appliquent (email unique, âge minimum, stage ouvert).
+      </p>
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label class="label" for="stage">Stage d'affectation <span class="text-rose-500">*</span></label>
+          <select id="stage" class="input" [(ngModel)]="stageId">
+            <option [ngValue]="null">— Choisir —</option>
+            <option *ngFor="let s of stagesOuverts" [ngValue]="s.id">{{ s.sujet }} ({{ s.dateDebut | date: 'dd/MM/yyyy' }})</option>
+          </select>
+        </div>
+        <div>
+          <label class="label" for="departement">Département</label>
+          <select id="departement" class="input" [(ngModel)]="departementId">
+            <option [ngValue]="null">— Département souhaité —</option>
+            <option *ngFor="let d of departements" [ngValue]="d.id">{{ d.nom }}</option>
+          </select>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2">
+        <button type="button" class="btn btn-secondary" (click)="panneau = null">Annuler</button>
+        <button type="button" class="btn btn-primary" [disabled]="enCours" (click)="accepter()">Créer le stagiaire</button>
+      </div>
+    </div>
+  </div>
+</div>

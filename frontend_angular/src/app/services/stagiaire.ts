@@ -2,6 +2,8 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { StagiaireModel } from '../models/stage.model';
+import { PageResponse } from '../models/page.model';
+import { parametres } from '../shared/telechargement';
 import { environment } from '../../environments/environment';
 
 @Injectable({
@@ -36,5 +38,16 @@ export class Stagiaire {
 
   deleteStagiaire(id: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/${id}`);
+  }
+
+  /** Recherche multicritère paginée (mêmes filtres que l'export CSV). */
+  rechercher(
+    filtres: Record<string, string | number | null | undefined>,
+    page = 0,
+    size = 20,
+  ): Observable<PageResponse<StagiaireModel>> {
+    return this.http.get<PageResponse<StagiaireModel>>(`${this.baseUrl}/page`, {
+      params: parametres({ ...filtres, page, size }),
+    });
   }
 }

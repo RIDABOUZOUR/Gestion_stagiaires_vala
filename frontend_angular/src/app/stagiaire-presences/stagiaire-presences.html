@@ -1,0 +1,65 @@
+<div class="space-y-4">
+  <p *ngIf="stageAnnule" class="rounded-lg bg-rose-50 px-4 py-3 text-sm text-rose-700 ring-1 ring-rose-200">
+    Le stage a été annulé : les présences ne peuvent plus être saisies.
+  </p>
+
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <div class="flex items-center gap-2">
+      <button type="button" class="btn-icon text-slate-600 hover:bg-slate-100" [disabled]="premierMois" (click)="changerMois(-1)" aria-label="Mois précédent">
+        <app-icon name="arrow-left" size="h-4 w-4"></app-icon>
+      </button>
+      <span class="min-w-40 text-center text-sm font-semibold text-slate-900">{{ libelleDuMois }}</span>
+      <button type="button" class="btn-icon text-slate-600 hover:bg-slate-100" [disabled]="dernierMois" (click)="changerMois(1)" aria-label="Mois suivant">
+        <app-icon name="arrow-right" size="h-4 w-4"></app-icon>
+      </button>
+    </div>
+
+    <div *ngIf="!stageAnnule" class="flex flex-wrap gap-1" role="radiogroup" aria-label="Statut à appliquer">
+      <button
+        *ngFor="let o of outils"
+        type="button"
+        role="radio"
+        [attr.aria-checked]="outil === o"
+        class="rounded-lg px-2.5 py-1.5 text-xs font-medium ring-1 transition"
+        [ngClass]="[o === 'EFFACER' ? 'bg-white text-slate-600 ring-slate-200' : statuts[o].classes, outil === o ? 'ring-2 ring-indigo-500' : '']"
+        (click)="outil = o">
+        {{ libelleOutil(o) }}
+      </button>
+    </div>
+  </div>
+
+  <p class="text-xs text-slate-500">
+    Choisissez un statut puis cliquez sur les jours concernés. Seuls les jours du stage passés ou du jour peuvent être saisis.
+  </p>
+
+  <div class="grid grid-cols-7 gap-1 text-center text-xs" [class.opacity-60]="loading">
+    <div *ngFor="let e of enTetes" class="py-1 font-semibold text-slate-400">{{ e }}</div>
+    <ng-container *ngFor="let c of cases">
+      <div *ngIf="!c"></div>
+      <button
+        *ngIf="c"
+        type="button"
+        class="flex h-14 flex-col items-center justify-center rounded-lg ring-1 transition enabled:hover:ring-2 enabled:hover:ring-indigo-400"
+        [ngClass]="c.presence ? statuts[c.presence.statut].classes : (c.weekend ? 'bg-slate-50 text-slate-400 ring-slate-100' : 'bg-white text-slate-700 ring-slate-200')"
+        [class.cursor-not-allowed]="!c.saisissable"
+        [class.opacity-40]="!c.saisissable && !c.presence"
+        [disabled]="!c.saisissable"
+        [attr.aria-label]="c.date + (c.presence ? ' : ' + statuts[c.presence.statut].libelle : '')"
+        (click)="appliquer(c)">
+        <span class="font-medium">{{ c.numero }}</span>
+        <span *ngIf="c.presence" class="text-[10px] font-semibold">{{ statuts[c.presence.statut].court }}</span>
+        <span *ngIf="enCours(c)" class="mt-0.5 h-2 w-2 animate-pulse rounded-full bg-indigo-500"></span>
+      </button>
+    </ng-container>
+  </div>
+
+  <div class="flex flex-wrap items-center gap-3 border-t border-slate-100 pt-4 text-xs">
+    <span *ngFor="let r of resume" class="inline-flex items-center gap-1.5">
+      <span class="rounded px-1.5 py-0.5 font-semibold ring-1" [ngClass]="statuts[r.statut].classes">{{ statuts[r.statut].court }}</span>
+      {{ statuts[r.statut].libelle }} : <strong>{{ r.nombre }}</strong>
+    </span>
+    <span class="ml-auto text-sm text-slate-600">
+      Taux de présence du mois : <strong>{{ tauxPresence !== null ? (tauxPresence + ' %') : '—' }}</strong>
+    </span>
+  </div>
+</div>
