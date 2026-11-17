@@ -6,6 +6,7 @@ import {
 } from '@angular/ssr/node';
 import express from 'express';
 import { join } from 'node:path';
+import { environment } from './environments/environment';
 
 const browserDistFolder = join(import.meta.dirname, '../browser');
 
@@ -32,9 +33,19 @@ app.disable('x-powered-by');
 
 /**
  * En-têtes de sécurité appliqués à toutes les réponses.
- * `connect-src` autorise l'origine du backend configurée via API_ORIGIN.
+ * `connect-src` autorise l'origine du backend : API_ORIGIN si elle est définie,
+ * sinon celle de `environment.apiUrl` (l'API que l'application appelle réellement).
+ * Sans cette valeur par défaut, `npm start` bloquait tous les appels à l'API.
  */
-const apiOrigin = process.env['API_ORIGIN'];
+const apiOrigin = process.env['API_ORIGIN'] || origineDe(environment.apiUrl);
+
+function origineDe(url: string): string | undefined {
+  try {
+    return new URL(url).origin;
+  } catch {
+    return undefined;
+  }
+}
 const connectSrc = ["'self'", apiOrigin].filter(Boolean).join(' ');
 
 const contentSecurityPolicy = [
