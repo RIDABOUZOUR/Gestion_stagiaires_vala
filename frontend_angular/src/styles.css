@@ -26,6 +26,32 @@
   :focus-visible {
     @apply outline-none ring-2 ring-indigo-500 ring-offset-2;
   }
+
+  /* Curseur « main » sur tout ce qui est cliquable (Tailwind v4 laisse le
+     curseur par défaut sur les boutons). */
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']),
+  [role='tab'],
+  [role='radio'],
+  a[href],
+  summary,
+  select:not(:disabled),
+  input[type='checkbox']:not(:disabled),
+  input[type='radio']:not(:disabled),
+  input[type='submit']:not(:disabled),
+  input[type='button']:not(:disabled),
+  label:has(> input[type='checkbox']:not(:disabled)),
+  label:has(> input[type='radio']:not(:disabled)) {
+    cursor: pointer;
+  }
+
+  /* Élément désactivé : curseur « interdit ». */
+  button:disabled,
+  select:disabled,
+  input:disabled,
+  [aria-disabled='true'] {
+    cursor: not-allowed;
+  }
 }
 
 /* =====================================================================
