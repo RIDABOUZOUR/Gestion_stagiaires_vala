@@ -1,5 +1,6 @@
 package com.vala.gestionStagiaires.DTOs;
 
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -7,10 +8,12 @@ import lombok.Data;
 public class DepartementDto {
     private Long id;
 
-    @Size(min = 3, max = 40, message = "Le nom ne doit pas dépasser 40 caractères")
+    @NotBlank(message = "Le nom est obligatoire")
+    @Size(min = 3, max = 40, message = "Le nom doit contenir entre 3 et 40 caractères")
     private String nom;
 
-    @Size(min = 3, max = 40, message = "Le nom du responsable ne doit pas dépasser 40 caractères")
+    @NotBlank(message = "Le responsable est obligatoire")
+    @Size(min = 3, max = 40, message = "Le nom du responsable doit contenir entre 3 et 40 caractères")
     private String responsable;
 
 }

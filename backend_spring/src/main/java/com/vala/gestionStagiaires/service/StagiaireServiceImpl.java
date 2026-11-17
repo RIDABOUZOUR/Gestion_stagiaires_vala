@@ -1,58 +1,61 @@
 package com.vala.gestionStagiaires.service;
 
+import com.vala.gestionStagiaires.DTOs.DepartementDto;
+import com.vala.gestionStagiaires.DTOs.StageDto;
 import com.vala.gestionStagiaires.DTOs.StagiaireDto;
-import com.vala.gestionStagiaires.Mappers.DepartementMapper;
-import com.vala.gestionStagiaires.Mappers.StageMapper;
 import com.vala.gestionStagiaires.Mappers.StagiaireMapper;
+import com.vala.gestionStagiaires.entities.Departement;
+import com.vala.gestionStagiaires.entities.Stage;
 import com.vala.gestionStagiaires.entities.Stagiaire;
+import com.vala.gestionStagiaires.exceptions.BusinessRuleException;
+import com.vala.gestionStagiaires.exceptions.ResourceNotFoundException;
 import com.vala.gestionStagiaires.exceptions.StagiaireNotFoundException;
+import com.vala.gestionStagiaires.repository.DepartementRepository;
+import com.vala.gestionStagiaires.repository.StageRepository;
 import com.vala.gestionStagiaires.repository.StagiaireRepository;
-import jakarta.transaction.Transactional;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class StagiaireServiceImpl implements StagiaireService {
 
-    @Autowired
-    private StagiaireRepository stagiaireRepository;
-    @Autowired
-    private StagiaireMapper mapper;
-    @Autowired
-    private DepartementMapper departementMapper;
-    @Autowired
-    private StageMapper stageMapper;
+    private final StagiaireRepository stagiaireRepository;
+    private final StageRepository stageRepository;
+    private final DepartementRepository departementRepository;
+    private final StagiaireMapper mapper;
 
     @Override
+    @Transactional(readOnly = true)
     public List<StagiaireDto> getAllStagiares() {
-        List<Stagiaire> stagiaires = stagiaireRepository.findAll();
-        List<StagiaireDto> stagiaireDtos = new ArrayList<>();
-        for (Stagiaire stagiaire : stagiaires) {
-            StagiaireDto stagiaireDto = mapper.fromStagiaire(stagiaire);
-            stagiaireDtos.add(stagiaireDto);
-        }
-        return stagiaireDtos;
+        return stagiaireRepository.findAll().stream()
+                .map(mapper::fromStagiaire)
+                .toList();
     }
 
     @Override
     public StagiaireDto addStagiare(StagiaireDto stagiaireDto) {
         Stagiaire stagiaire = mapper.fromStagiaireDto(stagiaireDto);
+        stagiaire.setId(null);
+        stagiaire.setStage(findStageAffectable(stagiaireDto.getStage()));
+        stagiaire.setDepartement(findDepartement(stagiaireDto.getDepartement()));
         return mapper.fromStagiaire(stagiaireRepository.save(stagiaire));
-
     }
 
     @Override
     public void deleteStagiaire(Long id) {
-
+        if (!stagiaireRepository.existsById(id)) {
+            throw new StagiaireNotFoundException(id);
+        }
         stagiaireRepository.deleteById(id);
     }
-
 
     @Override
     public StagiaireDto updateStagiaire(StagiaireDto updatedStagiare, Long id) {
@@ -69,12 +72,21 @@ public class StagiaireServiceImpl implements StagiaireService {
         existingStagiaire.setNiveau(updatedStagiare.getNiveau());
         existingStagiaire.setOrganisme(updatedStagiare.getOrganisme());
         existingStagiaire.setFiliere(updatedStagiare.getFiliere());
-        existingStagiaire.setDepartement(departementMapper.fromDepartementDto(updatedStagiare.getDepartement()));
-        existingStagiaire.setStage(stageMapper.fromStageDto(updatedStagiare.getStage()));
+        existingStagiaire.setDepartement(findDepartement(updatedStagiare.getDepartement()));
+
+        // On ne contrôle le statut que si le stagiaire change de stage : un stagiaire
+        // dont le stage vient de se terminer doit rester modifiable.
+        Long ancienStageId = existingStagiaire.getStage() != null ? existingStagiaire.getStage().getId() : null;
+        Long nouveauStageId = updatedStagiare.getStage() != null ? updatedStagiare.getStage().getId() : null;
+        if (!Objects.equals(ancienStageId, nouveauStageId)) {
+            existingStagiaire.setStage(findStageAffectable(updatedStagiare.getStage()));
+        }
+
         return mapper.fromStagiaire(stagiaireRepository.save(existingStagiaire));
     }
-    
+
     @Override
+    @Transactional(readOnly = true)
     public StagiaireDto getStagiaire(Long id) {
         Stagiaire stagiaire = stagiaireRepository.findById(id)
                 .orElseThrow(() -> new StagiaireNotFoundException(id));
@@ -82,60 +94,75 @@ public class StagiaireServiceImpl implements StagiaireService {
     }
 
     @Override
-    public Map<String, Long> countStagiairesParDepartement() {
-        List<Object[]> data = stagiaireRepository.countStagiairesParDepartement();
-        Map<String, Long> result = new HashMap<>();
-        for (Object[] row : data) {
-            result.put((String) row[0], (Long) row[1]);
-        }
-        return result;
-    }
-
-    @Override
+    @Transactional(readOnly = true)
     public List<StagiaireDto> searchStagiaire(String keyword) {
-        List<Stagiaire> stagiaires = stagiaireRepository.findByNomIgnoreCaseContainingOrPrenomIgnoreCaseContaining(keyword,keyword);
-        List<StagiaireDto> stagiaireDtos = new ArrayList<>();
-        for (Stagiaire stagiaire : stagiaires) {
-            StagiaireDto stagiaireDto = mapper.fromStagiaire(stagiaire);
-            stagiaireDtos.add(stagiaireDto);
-        }
-        return stagiaireDtos;
+        return stagiaireRepository.findByNomIgnoreCaseContainingOrPrenomIgnoreCaseContaining(keyword, keyword)
+                .stream()
+                .map(mapper::fromStagiaire)
+                .toList();
+    }
+
+    // ------------------------------------------------------------------
+    // Statistiques
+    // ------------------------------------------------------------------
+
+    @Override
+    @Transactional(readOnly = true)
+    public Map<String, Long> countStagiairesParDepartement() {
+        return toMap(stagiaireRepository.countStagiairesParDepartement());
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Map<String, Long> getNombreStagiairesParFiliere() {
-        List<Object[]> rawData = stagiaireRepository.countStagiairesByFiliereRaw();
+        return toMap(stagiaireRepository.countStagiairesByFiliereRaw());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Map<String, Long> getStagiairesParOrganisme() {
+        return toMap(stagiaireRepository.countStagiairesByOrganisme());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Map<String, Long> getStagiairesParEncadrant() {
+        return toMap(stagiaireRepository.countStagiairesParEncadrant());
+    }
+
+    private static Map<String, Long> toMap(List<Object[]> rows) {
         Map<String, Long> result = new HashMap<>();
-        for (Object[] row : rawData) {
+        for (Object[] row : rows) {
             result.put((String) row[0], (Long) row[1]);
         }
         return result;
     }
-    @Override
-    public Map<String, Long> getStagiairesParOrganisme() {
-        List<Object[]> results = stagiaireRepository.countStagiairesByOrganisme();
-        Map<String, Long> stats = new HashMap<>();
-        for (Object[] row : results) {
-            String organisme = (String) row[0];
-            Long count = (Long) row[1];
-            stats.put(organisme, count);
+
+    // ------------------------------------------------------------------
+    // Chargement des relations + règles métier
+    // ------------------------------------------------------------------
+
+    /** Charge le stage en base et vérifie qu'il peut encore accueillir un stagiaire. */
+    private Stage findStageAffectable(StageDto stageDto) {
+        if (stageDto == null || stageDto.getId() == null) {
+            throw new BusinessRuleException("Le stagiaire doit être affecté à un stage existant.");
         }
-        return stats;
-    }
-    @Override
-    public Map<String, Long> getStagiairesParEncadrant() {
-        List<Object[]> results = stagiaireRepository.countStagiairesParEncadrant();
-        Map<String, Long> map = new HashMap<>();
-        for (Object[] row : results) {
-            String nomComplet = (String) row[0];
-            Long count = (Long) row[1];
-            map.put(nomComplet, count);
+        Long stageId = stageDto.getId();
+        Stage stage = stageRepository.findById(stageId)
+                .orElseThrow(() -> new ResourceNotFoundException("Stage", stageId));
+        if (stage.getStatus() != null && stage.getStatus().isFinal()) {
+            throw new BusinessRuleException(
+                    "Impossible d'affecter un stagiaire à un stage " + stage.getStatus() + ".");
         }
-        return map;
+        return stage;
     }
 
-
-
-
-
+    private Departement findDepartement(DepartementDto departementDto) {
+        if (departementDto == null || departementDto.getId() == null) {
+            throw new BusinessRuleException("Le stagiaire doit être rattaché à un département existant.");
+        }
+        Long departementId = departementDto.getId();
+        return departementRepository.findById(departementId)
+                .orElseThrow(() -> new ResourceNotFoundException("Département", departementId));
+    }
 }

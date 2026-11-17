@@ -104,4 +104,16 @@ class GlobalExceptionHandlerTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
         assertThat(response.getBody()).containsEntry("status", 409);
     }
+
+    @Test
+    @DisplayName("BusinessRuleException -> 409 avec le message métier")
+    void handleBusinessRule_shouldReturn409WithMessage() {
+        ResponseEntity<Map<String, Object>> response =
+                handler.handleBusinessRule(new BusinessRuleException("Règle violée"));
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(response.getBody())
+                .containsEntry("status", 409)
+                .containsEntry("message", "Règle violée");
+    }
 }

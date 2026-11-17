@@ -37,7 +37,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class StagiaireControllerTest {
 
     private static final String VALID_PAYLOAD =
-            "{\"nom\":\"Rida\",\"prenom\":\"Bouzour\",\"sexe\":\"HOMME\","
+            "{\"nom\":\"Rida\",\"prenom\":\"Bouzour\",\"sexe\":\"HOMME\",\"email\":\"rida@example.com\","
                     + "\"departement\":{\"id\":1},"
                     + "\"stage\":{\"id\":1,\"sujet\":\"Stage\",\"dateDebut\":\"2026-01-01\",\"dateFin\":\"2026-06-30\",\"encadrant\":{\"id\":1}}}";
 
@@ -64,6 +64,7 @@ class StagiaireControllerTest {
         d.setId(id);
         d.setNom(nom);
         d.setPrenom(prenom);
+        d.setEmail("stagiaire@example.com");
         d.setSexe(Sexe.HOMME);
         return d;
     }

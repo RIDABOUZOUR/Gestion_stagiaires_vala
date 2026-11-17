@@ -1,8 +1,8 @@
 package com.vala.gestionStagiaires.DTOs;
 
+import jakarta.validation.constraints.NotBlank;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.vala.gestionStagiaires.enums.StageStatus;
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -16,6 +16,7 @@ public class StageDto {
 
     private Long id;
 
+    @NotBlank(message = "Le sujet est obligatoire")
     @Size(max = 100, message = "Le sujet ne doit pas dépasser 100 caractères")
     private String sujet;
 
@@ -28,7 +29,6 @@ public class StageDto {
     private StageStatus status;
 
     @NotNull(message = "L'encadrant est obligatoire")
-    @Valid
     private EncadrantDto encadrant;
 
     @JsonIgnore

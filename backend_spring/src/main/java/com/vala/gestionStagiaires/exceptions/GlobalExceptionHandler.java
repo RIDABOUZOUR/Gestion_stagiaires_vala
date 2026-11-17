@@ -49,6 +49,12 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.NOT_FOUND, "Ressource introuvable", null);
     }
 
+    /** Règle métier violée (transition interdite, ressource encore référencée…) → HTTP 409. */
+    @ExceptionHandler(BusinessRuleException.class)
+    public ResponseEntity<Map<String, Object>> handleBusinessRule(BusinessRuleException ex) {
+        return build(HttpStatus.CONFLICT, ex.getMessage(), null);
+    }
+
     /** Contraintes d'intégrité (doublon, clé étrangère) → HTTP 409. */
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<Map<String, Object>> handleDataIntegrity(DataIntegrityViolationException ex) {

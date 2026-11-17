@@ -3,6 +3,7 @@ package com.vala.gestionStagiaires.controller;
 import com.vala.gestionStagiaires.DTOs.EncadrantDto;
 import com.vala.gestionStagiaires.DTOs.StageDto;
 import com.vala.gestionStagiaires.enums.StageStatus;
+import com.vala.gestionStagiaires.exceptions.BusinessRuleException;
 import com.vala.gestionStagiaires.exceptions.GlobalExceptionHandler;
 import com.vala.gestionStagiaires.exceptions.ResourceNotFoundException;
 import com.vala.gestionStagiaires.service.StageService;
@@ -28,6 +29,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -164,5 +166,48 @@ class StageControllerTest {
                 .andExpect(status().isNoContent());
 
         verify(stageService).deleteStage(1L);
+    }
+
+    @Test
+    @DisplayName("PATCH /stages/{id}/demarrer -> 200 + statut EN_COURS")
+    void demarrerStage_shouldReturn200() throws Exception {
+        when(stageService.changerStatut(1L, StageStatus.EN_COURS)).thenReturn(dto(1L, "Stage IA"));
+
+        mockMvc.perform(patch("/stages/1/demarrer"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("EN_COURS"));
+    }
+
+    @Test
+    @DisplayName("PATCH /stages/{id}/terminer -> délègue avec TERMINE")
+    void terminerStage_shouldDelegate() throws Exception {
+        when(stageService.changerStatut(1L, StageStatus.TERMINE)).thenReturn(dto(1L, "Stage IA"));
+
+        mockMvc.perform(patch("/stages/1/terminer")).andExpect(status().isOk());
+
+        verify(stageService).changerStatut(1L, StageStatus.TERMINE);
+    }
+
+    @Test
+    @DisplayName("PATCH /stages/{id}/annuler transition interdite -> 409 + message")
+    void annulerStage_forbidden_shouldReturn409() throws Exception {
+        when(stageService.changerStatut(1L, StageStatus.ANNULE))
+                .thenThrow(new BusinessRuleException("Transition de statut interdite : TERMINE → ANNULE."));
+
+        mockMvc.perform(patch("/stages/1/annuler"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.message").value("Transition de statut interdite : TERMINE → ANNULE."));
+    }
+
+    @Test
+    @DisplayName("POST /stages sujet vide -> 400")
+    void addStage_blankSujet_shouldReturn400() throws Exception {
+        mockMvc.perform(post("/stages")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"sujet\":\"  \",\"dateDebut\":\"2026-01-01\",\"dateFin\":\"2026-06-30\",\"encadrant\":{\"id\":1}}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors.sujet").exists());
+        verifyNoInteractions(stageService);
     }
 }

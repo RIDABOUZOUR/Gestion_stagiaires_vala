@@ -1,7 +1,7 @@
 package com.vala.gestionStagiaires.DTOs;
 
+import jakarta.validation.constraints.NotBlank;
 import com.vala.gestionStagiaires.enums.Sexe;
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Past;
@@ -16,10 +16,12 @@ import java.time.LocalDate;
 public class StagiaireDto {
     private Long id;
 
-    @Size(min = 3, max = 40, message = "Le nom ne doit pas dépasser 40 caractères")
+    @NotBlank(message = "Le nom est obligatoire")
+    @Size(min = 3, max = 40, message = "Le nom doit contenir entre 3 et 40 caractères")
     private String nom;
 
-    @Size(min = 3, max = 40, message = "Le prénom ne doit pas depasser 40 caractères")
+    @NotBlank(message = "Le prénom est obligatoire")
+    @Size(min = 3, max = 40, message = "Le prénom doit contenir entre 3 et 40 caractères")
     private String prenom;
 
     @Past(message = "La date de naissance doit être dans le passé")
@@ -28,6 +30,7 @@ public class StagiaireDto {
     @NotNull(message = "Le sexe doit être spécifié")
     private Sexe sexe;
 
+    @NotBlank(message = "L'email est obligatoire")
     @Email(message = "L'email doit être valide")
     private String email;
 
@@ -40,7 +43,6 @@ public class StagiaireDto {
     private String organisme;
 
     @NotNull(message = "Le stage est obligatoire")
-    @Valid
     private StageDto stage;
 
     private String niveau;
@@ -48,7 +50,6 @@ public class StagiaireDto {
     private String filiere;
 
     @NotNull(message = "Le département est obligatoire")
-    @Valid
     private DepartementDto departement;
 
 }

@@ -3,7 +3,9 @@ package com.vala.gestionStagiaires.service;
 import com.vala.gestionStagiaires.DTOs.DepartementDto;
 import com.vala.gestionStagiaires.Mappers.DepartementMapper;
 import com.vala.gestionStagiaires.entities.Departement;
+import com.vala.gestionStagiaires.exceptions.BusinessRuleException;
 import com.vala.gestionStagiaires.exceptions.ResourceNotFoundException;
+import com.vala.gestionStagiaires.repository.StagiaireRepository;
 import com.vala.gestionStagiaires.repository.DepartementRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -17,6 +19,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -26,6 +29,9 @@ class DepartementServiceImplTest {
 
     @Mock
     private DepartementRepository departementRepository;
+
+    @Mock
+    private StagiaireRepository stagiaireRepository;
 
     @Mock
     private DepartementMapper departementMapper;
@@ -94,11 +100,36 @@ class DepartementServiceImplTest {
     }
 
     @Test
-    @DisplayName("deleteDepartement() délègue au repository")
-    void deleteDepartement_shouldDelegateToRepository() {
+    @DisplayName("deleteDepartement() supprime si rien n'y est rattaché")
+    void deleteDepartement_shouldDeleteWhenUnused() {
+        when(departementRepository.existsById(5L)).thenReturn(true);
+        when(stagiaireRepository.existsByDepartementId(5L)).thenReturn(false);
+
         departementService.deleteDepartement(5L);
 
         verify(departementRepository).deleteById(5L);
+    }
+
+    @Test
+    @DisplayName("deleteDepartement() lève ResourceNotFoundException si absent")
+    void deleteDepartement_shouldThrowWhenNotFound() {
+        when(departementRepository.existsById(99L)).thenReturn(false);
+
+        assertThatThrownBy(() -> departementService.deleteDepartement(99L))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining("99");
+        verify(departementRepository, never()).deleteById(99L);
+    }
+
+    @Test
+    @DisplayName("deleteDepartement() refuse la suppression si des éléments y sont rattachés")
+    void deleteDepartement_shouldRefuseWhenStillReferenced() {
+        when(departementRepository.existsById(5L)).thenReturn(true);
+        when(stagiaireRepository.existsByDepartementId(5L)).thenReturn(true);
+
+        assertThatThrownBy(() -> departementService.deleteDepartement(5L))
+                .isInstanceOf(BusinessRuleException.class);
+        verify(departementRepository, never()).deleteById(5L);
     }
 
     @Test

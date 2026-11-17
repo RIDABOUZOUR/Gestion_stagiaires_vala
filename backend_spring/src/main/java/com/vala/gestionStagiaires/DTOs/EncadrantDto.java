@@ -1,6 +1,6 @@
 package com.vala.gestionStagiaires.DTOs;
 
-
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -10,12 +10,15 @@ import lombok.Data;
 public class EncadrantDto {
     private Long id;
 
-    @Size(min = 3, max = 40, message = "Le nom ne doit pas dépasser 40 caractères")
+    @NotBlank(message = "Le nom est obligatoire")
+    @Size(min = 3, max = 40, message = "Le nom doit contenir entre 3 et 40 caractères")
     private String nom;
 
-    @Size(min = 3, max = 40, message = "Le prénom ne doit pas depasser 40 caractères")
+    @NotBlank(message = "Le prénom est obligatoire")
+    @Size(min = 3, max = 40, message = "Le prénom doit contenir entre 3 et 40 caractères")
     private String prenom;
 
+    @NotBlank(message = "L'email est obligatoire")
     @Email(message = "L'email doit être valide")
     private String email;
 

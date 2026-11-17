@@ -3,7 +3,9 @@ package com.vala.gestionStagiaires.service;
 import com.vala.gestionStagiaires.DTOs.EncadrantDto;
 import com.vala.gestionStagiaires.Mappers.EncadrantMapper;
 import com.vala.gestionStagiaires.entities.Encadrant;
+import com.vala.gestionStagiaires.exceptions.BusinessRuleException;
 import com.vala.gestionStagiaires.exceptions.ResourceNotFoundException;
+import com.vala.gestionStagiaires.repository.StageRepository;
 import com.vala.gestionStagiaires.repository.EncadrantRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -17,6 +19,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -26,6 +29,9 @@ class EncadrantServiceImplTest {
 
     @Mock
     private EncadrantRepository encadrantRepository;
+
+    @Mock
+    private StageRepository stageRepository;
 
     @Mock
     private EncadrantMapper encadrantMapper;
@@ -86,11 +92,36 @@ class EncadrantServiceImplTest {
     }
 
     @Test
-    @DisplayName("deleteEncadrant() délègue au repository")
-    void deleteEncadrant_shouldDelegateToRepository() {
+    @DisplayName("deleteEncadrant() supprime si rien n'y est rattaché")
+    void deleteEncadrant_shouldDeleteWhenUnused() {
+        when(encadrantRepository.existsById(5L)).thenReturn(true);
+        when(stageRepository.existsByEncadrantId(5L)).thenReturn(false);
+
         encadrantService.deleteEncadrant(5L);
 
         verify(encadrantRepository).deleteById(5L);
+    }
+
+    @Test
+    @DisplayName("deleteEncadrant() lève ResourceNotFoundException si absent")
+    void deleteEncadrant_shouldThrowWhenNotFound() {
+        when(encadrantRepository.existsById(99L)).thenReturn(false);
+
+        assertThatThrownBy(() -> encadrantService.deleteEncadrant(99L))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining("99");
+        verify(encadrantRepository, never()).deleteById(99L);
+    }
+
+    @Test
+    @DisplayName("deleteEncadrant() refuse la suppression si des éléments y sont rattachés")
+    void deleteEncadrant_shouldRefuseWhenStillReferenced() {
+        when(encadrantRepository.existsById(5L)).thenReturn(true);
+        when(stageRepository.existsByEncadrantId(5L)).thenReturn(true);
+
+        assertThatThrownBy(() -> encadrantService.deleteEncadrant(5L))
+                .isInstanceOf(BusinessRuleException.class);
+        verify(encadrantRepository, never()).deleteById(5L);
     }
 
     @Test

@@ -8,6 +8,12 @@ import java.util.List;
 
 public interface StagiaireRepository extends JpaRepository<Stagiaire,Long> {
     List<Stagiaire> findByNomIgnoreCaseContainingOrPrenomIgnoreCaseContaining(String nomKeyword, String prenomKeyword);
+
+    /** Un stage a-t-il encore des stagiaires ? (bloque sa suppression) */
+    boolean existsByStageId(Long stageId);
+
+    /** Un département a-t-il encore des stagiaires ? (bloque sa suppression) */
+    boolean existsByDepartementId(Long departementId);
     @Query("SELECT s.departement.nom, COUNT(s) FROM Stagiaire s GROUP BY s.departement.nom")
     List<Object[]> countStagiairesParDepartement();
     @Query("SELECT s.filiere, COUNT(s) FROM Stagiaire s GROUP BY s.filiere")

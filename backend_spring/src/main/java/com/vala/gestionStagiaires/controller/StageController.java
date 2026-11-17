@@ -1,6 +1,7 @@
 package com.vala.gestionStagiaires.controller;
 
 import com.vala.gestionStagiaires.DTOs.StageDto;
+import com.vala.gestionStagiaires.enums.StageStatus;
 import com.vala.gestionStagiaires.service.StageService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,5 +48,22 @@ public class StageController {
         return ResponseEntity.ok(stageService.getStageById(id));
     }
 
+    // ------------------------------------------------------------------
+    // Actions sur le cycle de vie (PLANIFIE → EN_COURS → TERMINE, ou ANNULE)
+    // ------------------------------------------------------------------
 
+    @PatchMapping("/stages/{id}/demarrer")
+    public ResponseEntity<StageDto> demarrerStage(@PathVariable Long id) {
+        return ResponseEntity.ok(stageService.changerStatut(id, StageStatus.EN_COURS));
+    }
+
+    @PatchMapping("/stages/{id}/terminer")
+    public ResponseEntity<StageDto> terminerStage(@PathVariable Long id) {
+        return ResponseEntity.ok(stageService.changerStatut(id, StageStatus.TERMINE));
+    }
+
+    @PatchMapping("/stages/{id}/annuler")
+    public ResponseEntity<StageDto> annulerStage(@PathVariable Long id) {
+        return ResponseEntity.ok(stageService.changerStatut(id, StageStatus.ANNULE));
+    }
 }
