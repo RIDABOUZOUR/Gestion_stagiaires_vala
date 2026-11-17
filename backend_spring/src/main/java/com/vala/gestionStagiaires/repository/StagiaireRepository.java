@@ -1,6 +1,8 @@
 package com.vala.gestionStagiaires.repository;
 
 import com.vala.gestionStagiaires.entities.Stagiaire;
+import com.vala.gestionStagiaires.enums.StageStatus;
+import com.vala.gestionStagiaires.repository.projection.ComptageParLibelle;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -37,14 +39,16 @@ public interface StagiaireRepository extends JpaRepository<Stagiaire,Long>, JpaS
 
     /** Un département a-t-il encore des stagiaires ? (bloque sa suppression) */
     boolean existsByDepartementId(Long departementId);
-    @Query("SELECT s.departement.nom, COUNT(s) FROM Stagiaire s GROUP BY s.departement.nom")
-    List<Object[]> countStagiairesParDepartement();
-    @Query("SELECT s.filiere, COUNT(s) FROM Stagiaire s GROUP BY s.filiere")
-    List<Object[]> countStagiairesByFiliereRaw();
-    @Query("SELECT s.organisme, COUNT(s) FROM Stagiaire s GROUP BY s.organisme")
-    List<Object[]> countStagiairesByOrganisme();
-    @Query("SELECT CONCAT(e.nom, ' ', e.prenom), COUNT(s) FROM Stagiaire s JOIN s.stage enc JOIN enc.encadrant e GROUP BY e.nom, e.prenom")
-    List<Object[]> countStagiairesParEncadrant();
+    // ---- Statistiques -------------------------------------------------
+
+    @Query("SELECT new com.vala.gestionStagiaires.repository.projection.ComptageParLibelle(s.filiere, COUNT(s)) FROM Stagiaire s GROUP BY s.filiere")
+    List<ComptageParLibelle> compterParFiliere();
+
+    @Query("SELECT new com.vala.gestionStagiaires.repository.projection.ComptageParLibelle(s.organisme, COUNT(s)) FROM Stagiaire s GROUP BY s.organisme")
+    List<ComptageParLibelle> compterParOrganisme();
+
+    /** Stagiaires dont le stage est dans le statut donné (ex. EN_COURS = stagiaires actifs). */
+    long countByStageStatus(StageStatus status);
 
 
 

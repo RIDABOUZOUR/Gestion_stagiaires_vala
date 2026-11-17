@@ -24,9 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.Period;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
 @Service
@@ -120,42 +118,6 @@ public class StagiaireServiceImpl implements StagiaireService {
         return PageResponse.of(stagiaireRepository
                 .findAll(StagiaireSpecifications.avecFiltre(filtre), pageable)
                 .map(mapper::fromStagiaire));
-    }
-
-    // ------------------------------------------------------------------
-    // Statistiques
-    // ------------------------------------------------------------------
-
-    @Override
-    @Transactional(readOnly = true)
-    public Map<String, Long> countStagiairesParDepartement() {
-        return toMap(stagiaireRepository.countStagiairesParDepartement());
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Map<String, Long> getNombreStagiairesParFiliere() {
-        return toMap(stagiaireRepository.countStagiairesByFiliereRaw());
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Map<String, Long> getStagiairesParOrganisme() {
-        return toMap(stagiaireRepository.countStagiairesByOrganisme());
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Map<String, Long> getStagiairesParEncadrant() {
-        return toMap(stagiaireRepository.countStagiairesParEncadrant());
-    }
-
-    private static Map<String, Long> toMap(List<Object[]> rows) {
-        Map<String, Long> result = new HashMap<>();
-        for (Object[] row : rows) {
-            result.put((String) row[0], (Long) row[1]);
-        }
-        return result;
     }
 
     // ------------------------------------------------------------------

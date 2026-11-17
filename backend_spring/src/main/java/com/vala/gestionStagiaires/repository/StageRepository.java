@@ -2,12 +2,14 @@ package com.vala.gestionStagiaires.repository;
 
 import com.vala.gestionStagiaires.entities.Stage;
 import com.vala.gestionStagiaires.enums.StageStatus;
+import com.vala.gestionStagiaires.repository.projection.ComptageParStatut;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -39,4 +41,17 @@ public interface StageRepository extends JpaRepository<Stage,Long>, JpaSpecifica
 
     /** Stages en cours dont la date de fin est dépassée. */
     List<Stage> findByStatusAndDateFinBefore(StageStatus status, LocalDate date);
+
+    // ---- Statistiques -------------------------------------------------
+
+    @Query("SELECT new com.vala.gestionStagiaires.repository.projection.ComptageParStatut(s.status, COUNT(s)) FROM Stage s GROUP BY s.status")
+    List<ComptageParStatut> compterParStatut();
+
+    long countByStatus(StageStatus status);
+
+    /** Stages dans un statut donné dont la date de fin tombe dans l'intervalle (bornes incluses). */
+    @EntityGraph(attributePaths = "encadrant")
+    List<Stage> findByStatusAndDateFinBetweenOrderByDateFinAsc(StageStatus status, LocalDate debut, LocalDate fin);
+
+    long countByStatusAndDateFinBetween(StageStatus status, LocalDate debut, LocalDate fin);
 }

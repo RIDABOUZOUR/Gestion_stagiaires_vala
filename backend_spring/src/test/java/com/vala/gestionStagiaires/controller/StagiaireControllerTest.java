@@ -25,7 +25,6 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
 import java.util.List;
-import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -164,46 +163,6 @@ class StagiaireControllerTest {
                 .andExpect(status().isNoContent());
 
         verify(stagiaireService).deleteStagiaire(1L);
-    }
-
-    @Test
-    @DisplayName("GET /statistiques/departements -> 200 + map")
-    void getStatsParDepartement_shouldReturn200() throws Exception {
-        when(stagiaireService.countStagiairesParDepartement()).thenReturn(Map.of("Informatique", 2L));
-
-        mockMvc.perform(get("/statistiques/departements"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.Informatique").value(2));
-    }
-
-    @Test
-    @DisplayName("GET /statistiques/filieres -> 200 + map")
-    void getStatsParFiliere_shouldReturn200() throws Exception {
-        when(stagiaireService.getNombreStagiairesParFiliere()).thenReturn(Map.of("Génie Info", 5L));
-
-        mockMvc.perform(get("/statistiques/filieres"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$['Génie Info']").value(5));
-    }
-
-    @Test
-    @DisplayName("GET /statistiques/organismes -> 200 + map")
-    void getStatsParOrganisme_shouldReturn200() throws Exception {
-        when(stagiaireService.getStagiairesParOrganisme()).thenReturn(Map.of("ENSA", 3L));
-
-        mockMvc.perform(get("/statistiques/organismes"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.ENSA").value(3));
-    }
-
-    @Test
-    @DisplayName("GET /statistiques/encadrants -> 200 + map")
-    void getStatsParEncadrant_shouldReturn200() throws Exception {
-        when(stagiaireService.getStagiairesParEncadrant()).thenReturn(Map.of("Martin Paul", 4L));
-
-        mockMvc.perform(get("/statistiques/encadrants"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$['Martin Paul']").value(4));
     }
 
     @Test

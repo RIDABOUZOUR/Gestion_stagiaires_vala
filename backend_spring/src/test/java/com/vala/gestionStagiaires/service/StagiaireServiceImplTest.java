@@ -30,7 +30,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -263,53 +262,6 @@ class StagiaireServiceImplTest {
         when(mapper.fromStagiaire(s)).thenReturn(d);
 
         assertThat(stagiaireService.searchStagiaire("ri")).containsExactly(d);
-    }
-
-    @Test
-    @DisplayName("countStagiairesParDepartement() agrège les résultats")
-    void countStagiairesParDepartement_shouldReturnMap() {
-        List<Object[]> rows = new ArrayList<>();
-        rows.add(new Object[]{"Informatique", 2L});
-        rows.add(new Object[]{"RH", 1L});
-        when(stagiaireRepository.countStagiairesParDepartement()).thenReturn(rows);
-
-        assertThat(stagiaireService.countStagiairesParDepartement())
-                .containsEntry("Informatique", 2L)
-                .containsEntry("RH", 1L)
-                .hasSize(2);
-    }
-
-    @Test
-    @DisplayName("getNombreStagiairesParFiliere() agrège les résultats")
-    void getNombreStagiairesParFiliere_shouldReturnMap() {
-        List<Object[]> rows = new ArrayList<>();
-        rows.add(new Object[]{"Génie Info", 5L});
-        when(stagiaireRepository.countStagiairesByFiliereRaw()).thenReturn(rows);
-
-        assertThat(stagiaireService.getNombreStagiairesParFiliere())
-                .containsEntry("Génie Info", 5L);
-    }
-
-    @Test
-    @DisplayName("getStagiairesParOrganisme() agrège les résultats")
-    void getStagiairesParOrganisme_shouldReturnMap() {
-        List<Object[]> rows = new ArrayList<>();
-        rows.add(new Object[]{"ENSA", 3L});
-        when(stagiaireRepository.countStagiairesByOrganisme()).thenReturn(rows);
-
-        assertThat(stagiaireService.getStagiairesParOrganisme())
-                .containsEntry("ENSA", 3L);
-    }
-
-    @Test
-    @DisplayName("getStagiairesParEncadrant() agrège les résultats")
-    void getStagiairesParEncadrant_shouldReturnMap() {
-        List<Object[]> rows = new ArrayList<>();
-        rows.add(new Object[]{"Martin Paul", 4L});
-        when(stagiaireRepository.countStagiairesParEncadrant()).thenReturn(rows);
-
-        assertThat(stagiaireService.getStagiairesParEncadrant())
-                .containsEntry("Martin Paul", 4L);
     }
 
     @Test

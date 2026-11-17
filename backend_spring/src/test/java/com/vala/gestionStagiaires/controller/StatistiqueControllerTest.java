@@ -1,0 +1,131 @@
+package com.vala.gestionStagiaires.controller;
+
+import com.vala.gestionStagiaires.DTOs.ResumeStatistiques;
+import com.vala.gestionStagiaires.DTOs.StageDto;
+import com.vala.gestionStagiaires.enums.StageStatus;
+import com.vala.gestionStagiaires.exceptions.GlobalExceptionHandler;
+import com.vala.gestionStagiaires.service.StatistiqueService;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
+import java.util.EnumMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@ExtendWith(MockitoExtension.class)
+@DisplayName("StatistiqueController")
+class StatistiqueControllerTest {
+
+    @Mock
+    private StatistiqueService statistiqueService;
+
+    @InjectMocks
+    private StatistiqueController controller;
+
+    private MockMvc mockMvc;
+
+    @BeforeEach
+    void setUp() {
+        mockMvc = MockMvcBuilders.standaloneSetup(controller)
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .build();
+    }
+
+    private static Map<String, Long> ordonne(Object... cleValeur) {
+        Map<String, Long> map = new LinkedHashMap<>();
+        for (int i = 0; i < cleValeur.length; i += 2) {
+            map.put((String) cleValeur[i], (Long) cleValeur[i + 1]);
+        }
+        return map;
+    }
+
+    @Test
+    @DisplayName("GET /statistiques/departements -> objet {libellé: effectif}, ordre conservé")
+    void parDepartement() throws Exception {
+        when(statistiqueService.stagiairesParDepartement())
+                .thenReturn(ordonne("Informatique", 5L, "RH", 1L));
+
+        mockMvc.perform(get("/statistiques/departements"))
+                .andExpect(status().isOk())
+                .andExpect(content().json("{\"Informatique\":5,\"RH\":1}", true))
+                .andExpect(content().string("{\"Informatique\":5,\"RH\":1}"));
+    }
+
+    @Test
+    @DisplayName("GET /statistiques/filieres|organismes|encadrants -> 200")
+    void autresRepartitions() throws Exception {
+        when(statistiqueService.stagiairesParFiliere()).thenReturn(ordonne("Génie Info", 5L));
+        when(statistiqueService.stagiairesParOrganisme()).thenReturn(ordonne("ENSA", 3L));
+        when(statistiqueService.stagiairesParEncadrant()).thenReturn(ordonne("Martin Paul", 4L));
+
+        mockMvc.perform(get("/statistiques/filieres")).andExpect(jsonPath("$['Génie Info']").value(5));
+        mockMvc.perform(get("/statistiques/organismes")).andExpect(jsonPath("$.ENSA").value(3));
+        mockMvc.perform(get("/statistiques/encadrants")).andExpect(jsonPath("$['Martin Paul']").value(4));
+    }
+
+    @Test
+    @DisplayName("GET /statistiques/stages/statuts -> effectif par statut")
+    void stagesParStatut() throws Exception {
+        Map<StageStatus, Long> parStatut = new EnumMap<>(StageStatus.class);
+        parStatut.put(StageStatus.EN_COURS, 4L);
+        parStatut.put(StageStatus.PLANIFIE, 0L);
+        when(statistiqueService.stagesParStatut()).thenReturn(parStatut);
+
+        mockMvc.perform(get("/statistiques/stages/statuts"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.EN_COURS").value(4))
+                .andExpect(jsonPath("$.PLANIFIE").value(0));
+    }
+
+    @Test
+    @DisplayName("GET /statistiques/stages/echeances -> 30 jours par défaut, paramètre jours sinon")
+    void stagesAEcheance() throws Exception {
+        StageDto stage = new StageDto();
+        stage.setSujet("Stage IA");
+        when(statistiqueService.stagesAEcheance(30)).thenReturn(List.of(stage));
+
+        mockMvc.perform(get("/statistiques/stages/echeances"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].sujet").value("Stage IA"));
+        mockMvc.perform(get("/statistiques/stages/echeances").param("jours", "7"))
+                .andExpect(status().isOk());
+
+        verify(statistiqueService).stagesAEcheance(7);
+    }
+
+    @Test
+    @DisplayName("GET /statistiques/stages/echeances?jours=abc -> 400")
+    void stagesAEcheance_parametreInvalide() throws Exception {
+        mockMvc.perform(get("/statistiques/stages/echeances").param("jours", "abc"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Paramètre invalide : jours."));
+    }
+
+    @Test
+    @DisplayName("GET /statistiques/resume -> indicateurs clés")
+    void resume() throws Exception {
+        when(statistiqueService.resume()).thenReturn(new ResumeStatistiques(12, 7, 6, 3, 2, 1, 30, 4, 3));
+
+        mockMvc.perform(get("/statistiques/resume"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalStagiaires").value(12))
+                .andExpect(jsonPath("$.stagiairesActifs").value(7))
+                .andExpect(jsonPath("$.stagesAEcheance").value(1))
+                .andExpect(jsonPath("$.joursEcheance").value(30));
+    }
+}

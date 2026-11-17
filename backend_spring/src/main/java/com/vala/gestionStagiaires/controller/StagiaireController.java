@@ -17,7 +17,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 public class StagiaireController {
@@ -70,23 +69,5 @@ public class StagiaireController {
     @PutMapping("/stagiaires/{id}")
     public ResponseEntity<StagiaireDto> updateStagiaire(@Valid @RequestBody StagiaireDto stagiaireDto, @PathVariable Long id) {
         return ResponseEntity.ok(stagiaireService.updateStagiaire(stagiaireDto, id));
-    }
-    @GetMapping("/statistiques/departements")
-    public ResponseEntity<Map<String, Long>> getStatsParDepartement() {
-        return ResponseEntity.ok(stagiaireService.countStagiairesParDepartement());
-    }
-    @GetMapping("/statistiques/filieres")
-    public ResponseEntity<Map<String, Long>> getStatistiquesParFiliere() {
-        return ResponseEntity.ok(stagiaireService.getNombreStagiairesParFiliere());
-    }
-
-    @GetMapping("/statistiques/organismes")
-    public ResponseEntity<Map<String, Long>> getStagiairesParOrganisme() {
-        return ResponseEntity.ok(stagiaireService.getStagiairesParOrganisme());
-    }
-
-    @GetMapping("/statistiques/encadrants")
-    public ResponseEntity<Map<String, Long>> getStagiairesParEncadrant() {
-        return ResponseEntity.ok(stagiaireService.getStagiairesParEncadrant());
     }
 }
