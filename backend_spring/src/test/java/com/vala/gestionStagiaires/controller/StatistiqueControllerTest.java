@@ -34,6 +34,9 @@ class StatistiqueControllerTest {
     @Mock
     private StatistiqueService statistiqueService;
 
+    @Mock
+    private com.vala.gestionStagiaires.service.SuiviStatistiqueService suiviStatistiqueService;
+
     @InjectMocks
     private StatistiqueController controller;
 

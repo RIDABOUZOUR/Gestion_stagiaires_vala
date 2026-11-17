@@ -3,6 +3,7 @@ package com.vala.gestionStagiaires.controller;
 import com.vala.gestionStagiaires.DTOs.PageResponse;
 import com.vala.gestionStagiaires.DTOs.StageDto;
 import com.vala.gestionStagiaires.DTOs.StageFiltre;
+import com.vala.gestionStagiaires.DTOs.suivi.StageHistoriqueDto;
 import com.vala.gestionStagiaires.enums.StageStatus;
 import com.vala.gestionStagiaires.service.StageService;
 import jakarta.validation.Valid;
@@ -70,6 +71,11 @@ public class StageController {
     // ------------------------------------------------------------------
     // Actions sur le cycle de vie (PLANIFIE → EN_COURS → TERMINE, ou ANNULE)
     // ------------------------------------------------------------------
+
+    @GetMapping("/stages/{id}/historique")
+    public ResponseEntity<List<StageHistoriqueDto>> getHistorique(@PathVariable Long id) {
+        return ResponseEntity.ok(stageService.getHistorique(id));
+    }
 
     @PatchMapping("/stages/{id}/demarrer")
     public ResponseEntity<StageDto> demarrerStage(@PathVariable Long id) {

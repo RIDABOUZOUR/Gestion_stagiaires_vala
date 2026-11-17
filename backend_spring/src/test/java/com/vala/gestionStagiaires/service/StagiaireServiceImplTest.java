@@ -16,6 +16,8 @@ import com.vala.gestionStagiaires.exceptions.BusinessRuleException;
 import com.vala.gestionStagiaires.exceptions.ResourceNotFoundException;
 import com.vala.gestionStagiaires.exceptions.StagiaireNotFoundException;
 import com.vala.gestionStagiaires.repository.DepartementRepository;
+import com.vala.gestionStagiaires.repository.PresenceRepository;
+import com.vala.gestionStagiaires.repository.RapportHebdomadaireRepository;
 import com.vala.gestionStagiaires.repository.StageRepository;
 import com.vala.gestionStagiaires.repository.StagiaireRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -51,6 +53,12 @@ class StagiaireServiceImplTest {
     private StagiaireMapper mapper;
 
     @Mock
+    private PresenceRepository presenceRepository;
+
+    @Mock
+    private RapportHebdomadaireRepository rapportRepository;
+
+    @Mock
     private StageRepository stageRepository;
 
     @Mock
@@ -61,7 +69,7 @@ class StagiaireServiceImplTest {
     @BeforeEach
     void setUp() {
         stagiaireService = new StagiaireServiceImpl(stagiaireRepository, stageRepository, departementRepository,
-                mapper, new ReglesMetierProperties(16, 0));
+                mapper, new ReglesMetierProperties(16, 0), presenceRepository, rapportRepository);
     }
 
     private StagiaireDto dto(Long id, String nom, String prenom) {
@@ -163,6 +171,8 @@ class StagiaireServiceImplTest {
 
         stagiaireService.deleteStagiaire(3L);
 
+        verify(presenceRepository).supprimerParStagiaire(3L);
+        verify(rapportRepository).supprimerParStagiaire(3L);
         verify(stagiaireRepository).deleteById(3L);
     }
 

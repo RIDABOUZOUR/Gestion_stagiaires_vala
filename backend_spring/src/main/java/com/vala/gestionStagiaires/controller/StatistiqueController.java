@@ -2,8 +2,11 @@ package com.vala.gestionStagiaires.controller;
 
 import com.vala.gestionStagiaires.DTOs.ResumeStatistiques;
 import com.vala.gestionStagiaires.DTOs.StageDto;
+import com.vala.gestionStagiaires.DTOs.suivi.AssiduiteStatistiques;
+import com.vala.gestionStagiaires.DTOs.suivi.RapportEnRetard;
 import com.vala.gestionStagiaires.enums.StageStatus;
 import com.vala.gestionStagiaires.service.StatistiqueService;
+import com.vala.gestionStagiaires.service.SuiviStatistiqueService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,6 +27,7 @@ import java.util.Map;
 public class StatistiqueController {
 
     private final StatistiqueService statistiqueService;
+    private final SuiviStatistiqueService suiviStatistiqueService;
 
     @GetMapping("/departements")
     public ResponseEntity<Map<String, Long>> parDepartement() {
@@ -60,5 +64,20 @@ public class StatistiqueController {
     @GetMapping("/resume")
     public ResponseEntity<ResumeStatistiques> resume() {
         return ResponseEntity.ok(statistiqueService.resume());
+    }
+
+    // ---- Suivi ----------------------------------------------------------
+
+    /** Taux de présence des stagiaires en cours : global, par département et par stagiaire. */
+    @GetMapping("/suivi/assiduite")
+    public ResponseEntity<AssiduiteStatistiques> assiduite() {
+        return ResponseEntity.ok(suiviStatistiqueService.assiduite());
+    }
+
+    /** Stagiaires en cours sans rapport depuis plus de {@code jours} jours (14 par défaut). */
+    @GetMapping("/suivi/rapports-en-retard")
+    public ResponseEntity<List<RapportEnRetard>> rapportsEnRetard(
+            @RequestParam(defaultValue = "" + SuiviStatistiqueService.JOURS_SANS_RAPPORT_PAR_DEFAUT) int jours) {
+        return ResponseEntity.ok(suiviStatistiqueService.rapportsEnRetard(jours));
     }
 }

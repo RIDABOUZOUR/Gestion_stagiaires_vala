@@ -30,6 +30,10 @@ public interface StagiaireRepository extends JpaRepository<Stagiaire,Long>, JpaS
     @EntityGraph(attributePaths = {"stage.encadrant", "departement"})
     List<Stagiaire> findByNomIgnoreCaseContainingOrPrenomIgnoreCaseContaining(String nomKeyword, String prenomKeyword);
 
+    /** Stagiaires dont le stage est dans le statut donné, avec stage, encadrant et département. */
+    @EntityGraph(attributePaths = {"stage.encadrant", "departement"})
+    List<Stagiaire> findByStageStatus(StageStatus status);
+
     boolean existsByEmailIgnoreCase(String email);
 
     boolean existsByEmailIgnoreCaseAndIdNot(String email, Long id);

@@ -14,6 +14,8 @@ import com.vala.gestionStagiaires.exceptions.BusinessRuleException;
 import com.vala.gestionStagiaires.exceptions.ResourceNotFoundException;
 import com.vala.gestionStagiaires.exceptions.StagiaireNotFoundException;
 import com.vala.gestionStagiaires.repository.DepartementRepository;
+import com.vala.gestionStagiaires.repository.PresenceRepository;
+import com.vala.gestionStagiaires.repository.RapportHebdomadaireRepository;
 import com.vala.gestionStagiaires.repository.StageRepository;
 import com.vala.gestionStagiaires.repository.StagiaireRepository;
 import com.vala.gestionStagiaires.repository.specification.StagiaireSpecifications;
@@ -37,6 +39,8 @@ public class StagiaireServiceImpl implements StagiaireService {
     private final DepartementRepository departementRepository;
     private final StagiaireMapper mapper;
     private final ReglesMetierProperties regles;
+    private final PresenceRepository presenceRepository;
+    private final RapportHebdomadaireRepository rapportRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -62,6 +66,9 @@ public class StagiaireServiceImpl implements StagiaireService {
         if (!stagiaireRepository.existsById(id)) {
             throw new StagiaireNotFoundException(id);
         }
+        // Le suivi (présences, rapports) n'a pas de sens sans le stagiaire.
+        presenceRepository.supprimerParStagiaire(id);
+        rapportRepository.supprimerParStagiaire(id);
         stagiaireRepository.deleteById(id);
     }
 

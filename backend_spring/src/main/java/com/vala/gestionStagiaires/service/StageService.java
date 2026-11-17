@@ -3,6 +3,7 @@ package com.vala.gestionStagiaires.service;
 import com.vala.gestionStagiaires.DTOs.PageResponse;
 import com.vala.gestionStagiaires.DTOs.StageDto;
 import com.vala.gestionStagiaires.DTOs.StageFiltre;
+import com.vala.gestionStagiaires.DTOs.suivi.StageHistoriqueDto;
 import com.vala.gestionStagiaires.enums.StageStatus;
 
 import org.springframework.data.domain.Pageable;
@@ -24,6 +25,9 @@ public interface StageService {
 
     /** Fait passer un stage à un nouveau statut en respectant son cycle de vie. */
     StageDto changerStatut(Long id, StageStatus cible);
+
+    /** Changements de statut du stage, du plus ancien au plus récent. */
+    List<StageHistoriqueDto> getHistorique(Long id);
 
     /**
      * Met à jour les statuts selon la date du jour (PLANIFIE → EN_COURS → TERMINE).

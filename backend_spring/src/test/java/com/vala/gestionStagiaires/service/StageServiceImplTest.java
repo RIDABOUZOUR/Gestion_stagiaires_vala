@@ -12,6 +12,9 @@ import com.vala.gestionStagiaires.enums.StageStatus;
 import com.vala.gestionStagiaires.exceptions.BusinessRuleException;
 import com.vala.gestionStagiaires.exceptions.ResourceNotFoundException;
 import com.vala.gestionStagiaires.repository.EncadrantRepository;
+import com.vala.gestionStagiaires.entities.StageHistorique;
+import com.vala.gestionStagiaires.enums.OrigineChangement;
+import com.vala.gestionStagiaires.repository.StageHistoriqueRepository;
 import com.vala.gestionStagiaires.repository.StageRepository;
 import com.vala.gestionStagiaires.repository.StagiaireRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -61,6 +64,9 @@ class StageServiceImplTest {
     @Mock
     private StageMapper stageMapper;
 
+    @Mock
+    private StageHistoriqueRepository historiqueRepository;
+
     private StageServiceImpl stageService;
 
     private Clock clock;
@@ -76,7 +82,7 @@ class StageServiceImplTest {
     /** Service configuré avec une capacité maximale par encadrant (0 = illimitée). */
     private StageServiceImpl serviceAvecCapacite(int maxStagesEnCours) {
         return new StageServiceImpl(stageRepository, encadrantRepository, stagiaireRepository, stageMapper,
-                clock, new ReglesMetierProperties(16, maxStagesEnCours));
+                clock, new ReglesMetierProperties(16, maxStagesEnCours), historiqueRepository);
     }
 
     private static EncadrantDto encadrantDto(Long id) {
@@ -292,6 +298,7 @@ class StageServiceImplTest {
 
             stageService.deleteStage(7L);
 
+            verify(historiqueRepository).supprimerParStage(7L);
             verify(stageRepository).deleteById(7L);
         }
 
@@ -368,6 +375,16 @@ class StageServiceImplTest {
         ArgumentCaptor<List<Stage>> captor = ArgumentCaptor.forClass(List.class);
         verify(stageRepository).saveAll(captor.capture());
         assertThat(captor.getValue()).containsExactly(aDemarrer, dejaFini, aTerminer);
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<StageHistorique>> historiques = ArgumentCaptor.forClass(List.class);
+        verify(historiqueRepository).saveAll(historiques.capture());
+        assertThat(historiques.getValue())
+                .extracting(StageHistorique::getAncienStatut, StageHistorique::getNouveauStatut, StageHistorique::getOrigine)
+                .containsExactly(
+                        org.assertj.core.groups.Tuple.tuple(StageStatus.PLANIFIE, StageStatus.EN_COURS, OrigineChangement.AUTOMATIQUE),
+                        org.assertj.core.groups.Tuple.tuple(StageStatus.PLANIFIE, StageStatus.TERMINE, OrigineChangement.AUTOMATIQUE),
+                        org.assertj.core.groups.Tuple.tuple(StageStatus.EN_COURS, StageStatus.TERMINE, OrigineChangement.AUTOMATIQUE));
     }
 
     @Test
@@ -470,5 +487,89 @@ class StageServiceImplTest {
 
         assertThat(page.content()).containsExactly(d);
         assertThat(page.totalElements()).isEqualTo(1);
+    }
+
+    @Nested
+    @DisplayName("Historique des statuts")
+    class Historique {
+
+        private StageHistorique historiqueEnregistre() {
+            ArgumentCaptor<StageHistorique> captor = ArgumentCaptor.forClass(StageHistorique.class);
+            verify(historiqueRepository).save(captor.capture());
+            return captor.getValue();
+        }
+
+        @Test
+        @DisplayName("la création trace le statut initial (null → PLANIFIE)")
+        void creationTracee() {
+            StageDto input = stageDto(null, "Stage IA", null);
+            Stage saved = stageEntity(1L, "Stage IA", StageStatus.PLANIFIE);
+            when(stageMapper.fromStageDto(input)).thenReturn(stageEntity(null, "Stage IA", null));
+            when(encadrantRepository.findById(1L)).thenReturn(Optional.of(encadrant));
+            when(stageRepository.save(any(Stage.class))).thenReturn(saved);
+
+            stageService.addStage(input);
+
+            StageHistorique h = historiqueEnregistre();
+            assertThat(h.getStage()).isSameAs(saved);
+            assertThat(h.getAncienStatut()).isNull();
+            assertThat(h.getNouveauStatut()).isEqualTo(StageStatus.PLANIFIE);
+            assertThat(h.getOrigine()).isEqualTo(OrigineChangement.MANUEL);
+            assertThat(h.getDateChangement()).isEqualTo(clock.instant());
+        }
+
+        @Test
+        @DisplayName("changerStatut() trace l'ancien et le nouveau statut")
+        void changementTrace() {
+            Stage stage = stageEntity(1L, "Sujet", StageStatus.PLANIFIE);
+            when(stageRepository.findById(1L)).thenReturn(Optional.of(stage));
+            when(stageRepository.save(stage)).thenReturn(stage);
+
+            stageService.changerStatut(1L, StageStatus.ANNULE);
+
+            StageHistorique h = historiqueEnregistre();
+            assertThat(h.getAncienStatut()).isEqualTo(StageStatus.PLANIFIE);
+            assertThat(h.getNouveauStatut()).isEqualTo(StageStatus.ANNULE);
+        }
+
+        @Test
+        @DisplayName("une modification sans changement de statut n'est pas tracée")
+        void modificationSansChangementNonTracee() {
+            StageDto input = stageDto(null, "Nouveau sujet", StageStatus.EN_COURS);
+            Stage existing = stageEntity(1L, "Ancien sujet", StageStatus.EN_COURS);
+            when(stageRepository.findById(1L)).thenReturn(Optional.of(existing));
+            when(encadrantRepository.findById(1L)).thenReturn(Optional.of(encadrant));
+            when(stageRepository.save(existing)).thenReturn(existing);
+
+            stageService.updateStage(input, 1L);
+
+            verify(historiqueRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("getHistorique() renvoie les changements dans l'ordre")
+        void getHistorique() {
+            Stage stage = stageEntity(1L, "Sujet", StageStatus.EN_COURS);
+            when(stageRepository.existsById(1L)).thenReturn(true);
+            when(historiqueRepository.findByStageIdOrderByDateChangementAscIdAsc(1L)).thenReturn(List.of(
+                    StageHistorique.builder().stage(stage).nouveauStatut(StageStatus.PLANIFIE)
+                            .origine(OrigineChangement.MANUEL).dateChangement(clock.instant()).build(),
+                    StageHistorique.builder().stage(stage).ancienStatut(StageStatus.PLANIFIE)
+                            .nouveauStatut(StageStatus.EN_COURS).origine(OrigineChangement.AUTOMATIQUE)
+                            .dateChangement(clock.instant()).build()));
+
+            assertThat(stageService.getHistorique(1L))
+                    .extracting(h -> h.nouveauStatut())
+                    .containsExactly(StageStatus.PLANIFIE, StageStatus.EN_COURS);
+        }
+
+        @Test
+        @DisplayName("getHistorique() lève ResourceNotFoundException si le stage n'existe pas")
+        void getHistoriqueInconnu() {
+            when(stageRepository.existsById(99L)).thenReturn(false);
+
+            org.assertj.core.api.Assertions.assertThatThrownBy(() -> stageService.getHistorique(99L))
+                    .isInstanceOf(ResourceNotFoundException.class);
+        }
     }
 }

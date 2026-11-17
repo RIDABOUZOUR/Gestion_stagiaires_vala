@@ -4,14 +4,18 @@ import com.vala.gestionStagiaires.DTOs.EncadrantDto;
 import com.vala.gestionStagiaires.DTOs.PageResponse;
 import com.vala.gestionStagiaires.DTOs.StageDto;
 import com.vala.gestionStagiaires.DTOs.StageFiltre;
+import com.vala.gestionStagiaires.DTOs.suivi.StageHistoriqueDto;
 import com.vala.gestionStagiaires.Mappers.StageMapper;
 import com.vala.gestionStagiaires.config.ReglesMetierProperties;
 import com.vala.gestionStagiaires.entities.Encadrant;
 import com.vala.gestionStagiaires.entities.Stage;
+import com.vala.gestionStagiaires.entities.StageHistorique;
+import com.vala.gestionStagiaires.enums.OrigineChangement;
 import com.vala.gestionStagiaires.enums.StageStatus;
 import com.vala.gestionStagiaires.exceptions.BusinessRuleException;
 import com.vala.gestionStagiaires.exceptions.ResourceNotFoundException;
 import com.vala.gestionStagiaires.repository.EncadrantRepository;
+import com.vala.gestionStagiaires.repository.StageHistoriqueRepository;
 import com.vala.gestionStagiaires.repository.StageRepository;
 import com.vala.gestionStagiaires.repository.StagiaireRepository;
 import com.vala.gestionStagiaires.repository.specification.StageSpecifications;
@@ -21,6 +25,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -36,6 +41,7 @@ public class StageServiceImpl implements StageService {
     private final StageMapper stageMapper;
     private final Clock clock;
     private final ReglesMetierProperties regles;
+    private final StageHistoriqueRepository historiqueRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -56,7 +62,9 @@ public class StageServiceImpl implements StageService {
         verifierCapaciteEncadrant(stage.getEncadrant(), status, null);
         stage.setStatus(status);
 
-        return stageMapper.fromStage(stageRepository.save(stage));
+        Stage saved = stageRepository.save(stage);
+        tracer(saved, null, status, OrigineChangement.MANUEL);
+        return stageMapper.fromStage(saved);
     }
 
     @Override
@@ -84,12 +92,14 @@ public class StageServiceImpl implements StageService {
             throw new BusinessRuleException(
                     "Impossible de supprimer ce stage : des stagiaires y sont encore affectés.");
         }
+        historiqueRepository.supprimerParStage(id);
         stageRepository.deleteById(id);
     }
 
     @Override
     public StageDto updateStage(StageDto stageDto, Long id) {
         Stage existingStage = findStage(id);
+        StageStatus ancien = existingStage.getStatus();
 
         StageStatus cible = stageDto.getStatus() != null ? stageDto.getStatus() : existingStage.getStatus();
         verifierTransition(existingStage.getStatus(), cible);
@@ -103,7 +113,9 @@ public class StageServiceImpl implements StageService {
         existingStage.setDateDebut(stageDto.getDateDebut());
         existingStage.setDateFin(stageDto.getDateFin());
         existingStage.setStatus(cible);
-        return stageMapper.fromStage(stageRepository.save(existingStage));
+        Stage saved = stageRepository.save(existingStage);
+        tracer(saved, ancien, cible, OrigineChangement.MANUEL);
+        return stageMapper.fromStage(saved);
     }
 
     @Override
@@ -115,32 +127,51 @@ public class StageServiceImpl implements StageService {
     @Override
     public StageDto changerStatut(Long id, StageStatus cible) {
         Stage stage = findStage(id);
-        verifierTransition(stage.getStatus(), cible);
+        StageStatus ancien = stage.getStatus();
+        verifierTransition(ancien, cible);
         verifierCoherenceDates(cible, stage.getDateDebut(), stage.getDateFin());
         if (stage.getStatus() != cible) {
             verifierCapaciteEncadrant(stage.getEncadrant(), cible, id);
         }
         stage.setStatus(cible);
-        return stageMapper.fromStage(stageRepository.save(stage));
+        Stage saved = stageRepository.save(stage);
+        tracer(saved, ancien, cible, OrigineChangement.MANUEL);
+        return stageMapper.fromStage(saved);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<StageHistoriqueDto> getHistorique(Long id) {
+        if (!stageRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Stage", id);
+        }
+        return historiqueRepository.findByStageIdOrderByDateChangementAscIdAsc(id).stream()
+                .map(StageHistoriqueDto::of)
+                .toList();
     }
 
     @Override
     public int mettreAJourStatutsAutomatiques() {
         LocalDate today = LocalDate.now(clock);
         List<Stage> modifies = new ArrayList<>();
+        List<StageHistorique> historiques = new ArrayList<>();
 
         for (Stage stage : stageRepository.findByStatusAndDateDebutLessThanEqual(StageStatus.PLANIFIE, today)) {
             // Un stage planifié dont la fin est déjà passée est directement terminé.
             boolean finDepassee = stage.getDateFin() != null && stage.getDateFin().isBefore(today);
-            stage.setStatus(finDepassee ? StageStatus.TERMINE : StageStatus.EN_COURS);
+            StageStatus cible = finDepassee ? StageStatus.TERMINE : StageStatus.EN_COURS;
+            historiques.add(historique(stage, StageStatus.PLANIFIE, cible, OrigineChangement.AUTOMATIQUE));
+            stage.setStatus(cible);
             modifies.add(stage);
         }
         for (Stage stage : stageRepository.findByStatusAndDateFinBefore(StageStatus.EN_COURS, today)) {
+            historiques.add(historique(stage, StageStatus.EN_COURS, StageStatus.TERMINE, OrigineChangement.AUTOMATIQUE));
             stage.setStatus(StageStatus.TERMINE);
             modifies.add(stage);
         }
 
         stageRepository.saveAll(modifies);
+        historiqueRepository.saveAll(historiques);
         return modifies.size();
     }
 
@@ -187,6 +218,27 @@ public class StageServiceImpl implements StageService {
             throw new BusinessRuleException("Cet encadrant suit déjà " + enCours
                     + " stage(s) en cours (maximum : " + max + ").");
         }
+    }
+
+    // ------------------------------------------------------------------
+    // Historique
+    // ------------------------------------------------------------------
+
+    /** Enregistre le changement de statut s'il y en a un. */
+    private void tracer(Stage stage, StageStatus ancien, StageStatus nouveau, OrigineChangement origine) {
+        if (ancien != nouveau) {
+            historiqueRepository.save(historique(stage, ancien, nouveau, origine));
+        }
+    }
+
+    private StageHistorique historique(Stage stage, StageStatus ancien, StageStatus nouveau, OrigineChangement origine) {
+        return StageHistorique.builder()
+                .stage(stage)
+                .ancienStatut(ancien)
+                .nouveauStatut(nouveau)
+                .dateChangement(Instant.now(clock))
+                .origine(origine)
+                .build();
     }
 
     private Stage findStage(Long id) {
