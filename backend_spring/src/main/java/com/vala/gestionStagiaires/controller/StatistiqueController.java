@@ -2,10 +2,12 @@ package com.vala.gestionStagiaires.controller;
 
 import com.vala.gestionStagiaires.DTOs.ResumeStatistiques;
 import com.vala.gestionStagiaires.DTOs.StageDto;
+import com.vala.gestionStagiaires.DTOs.candidature.CandidatureStatistiques;
 import com.vala.gestionStagiaires.DTOs.evaluation.EvaluationStatistiques;
 import com.vala.gestionStagiaires.DTOs.suivi.AssiduiteStatistiques;
 import com.vala.gestionStagiaires.DTOs.suivi.RapportEnRetard;
 import com.vala.gestionStagiaires.enums.StageStatus;
+import com.vala.gestionStagiaires.service.CandidatureService;
 import com.vala.gestionStagiaires.service.EvaluationService;
 import com.vala.gestionStagiaires.service.StatistiqueService;
 import com.vala.gestionStagiaires.service.SuiviStatistiqueService;
@@ -31,6 +33,7 @@ public class StatistiqueController {
     private final StatistiqueService statistiqueService;
     private final SuiviStatistiqueService suiviStatistiqueService;
     private final EvaluationService evaluationService;
+    private final CandidatureService candidatureService;
 
     @GetMapping("/departements")
     public ResponseEntity<Map<String, Long>> parDepartement() {
@@ -90,5 +93,13 @@ public class StatistiqueController {
     @GetMapping("/evaluations")
     public ResponseEntity<EvaluationStatistiques> evaluations() {
         return ResponseEntity.ok(evaluationService.statistiques());
+    }
+
+    // ---- Candidatures ---------------------------------------------------
+
+    /** Statuts, candidatures par mois (12 mois), taux d'acceptation, délai de décision, organismes. */
+    @GetMapping("/candidatures")
+    public ResponseEntity<CandidatureStatistiques> candidatures() {
+        return ResponseEntity.ok(candidatureService.statistiques());
     }
 }

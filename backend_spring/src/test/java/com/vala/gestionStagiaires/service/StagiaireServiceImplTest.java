@@ -67,6 +67,9 @@ class StagiaireServiceImplTest {
     private AttestationRepository attestationRepository;
 
     @Mock
+    private com.vala.gestionStagiaires.repository.CandidatureRepository candidatureRepository;
+
+    @Mock
     private StageRepository stageRepository;
 
     @Mock
@@ -78,7 +81,7 @@ class StagiaireServiceImplTest {
     void setUp() {
         stagiaireService = new StagiaireServiceImpl(stagiaireRepository, stageRepository, departementRepository,
                 mapper, new ReglesMetierProperties(16, 0), presenceRepository, rapportRepository,
-                evaluationRepository, attestationRepository);
+                evaluationRepository, attestationRepository, candidatureRepository);
     }
 
     private StagiaireDto dto(Long id, String nom, String prenom) {
@@ -183,6 +186,7 @@ class StagiaireServiceImplTest {
         verify(presenceRepository).supprimerParStagiaire(3L);
         verify(rapportRepository).supprimerParStagiaire(3L);
         verify(evaluationRepository).supprimerParStagiaire(3L);
+        verify(candidatureRepository).detacherStagiaire(3L);
         verify(stagiaireRepository).deleteById(3L);
     }
 

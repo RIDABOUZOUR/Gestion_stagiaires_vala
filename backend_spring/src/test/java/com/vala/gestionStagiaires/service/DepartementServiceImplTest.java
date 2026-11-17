@@ -34,6 +34,9 @@ class DepartementServiceImplTest {
     private StagiaireRepository stagiaireRepository;
 
     @Mock
+    private com.vala.gestionStagiaires.repository.CandidatureRepository candidatureRepository;
+
+    @Mock
     private DepartementMapper departementMapper;
 
     @InjectMocks
@@ -107,6 +110,7 @@ class DepartementServiceImplTest {
 
         departementService.deleteDepartement(5L);
 
+        verify(candidatureRepository).detacherDepartement(5L);
         verify(departementRepository).deleteById(5L);
     }
 

@@ -40,6 +40,9 @@ class StatistiqueControllerTest {
     @Mock
     private com.vala.gestionStagiaires.service.EvaluationService evaluationService;
 
+    @Mock
+    private com.vala.gestionStagiaires.service.CandidatureService candidatureService;
+
     @InjectMocks
     private StatistiqueController controller;
 
@@ -150,5 +153,22 @@ class StatistiqueControllerTest {
                 .andExpect(jsonPath("$.noteMoyenne").value(16.5))
                 .andExpect(jsonPath("$.stagiairesTerminesSansEvaluation").value(1))
                 .andExpect(jsonPath("$.repartitionNotes['16 et plus']").value(2));
+    }
+
+    @Test
+    @DisplayName("GET /statistiques/candidatures -> bilan des candidatures")
+    void candidatures() throws Exception {
+        Map<com.vala.gestionStagiaires.enums.CandidatureStatus, Long> parStatut =
+                new EnumMap<>(com.vala.gestionStagiaires.enums.CandidatureStatus.class);
+        parStatut.put(com.vala.gestionStagiaires.enums.CandidatureStatus.SOUMISE, 3L);
+        when(candidatureService.statistiques()).thenReturn(new com.vala.gestionStagiaires.DTOs.candidature.CandidatureStatistiques(
+                3, parStatut, ordonne("2026-03", 3L), 50.0, 4.5, ordonne("ENSA", 2L)));
+
+        mockMvc.perform(get("/statistiques/candidatures"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.parStatut.SOUMISE").value(3))
+                .andExpect(jsonPath("$.parMois['2026-03']").value(3))
+                .andExpect(jsonPath("$.tauxAcceptation").value(50.0))
+                .andExpect(jsonPath("$.delaiMoyenDecisionJours").value(4.5));
     }
 }
