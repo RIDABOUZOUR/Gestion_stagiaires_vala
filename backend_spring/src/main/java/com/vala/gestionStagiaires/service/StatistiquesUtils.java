@@ -53,4 +53,19 @@ public final class StatistiquesUtils {
         groupes.forEach((k, v) -> moyennes.put(k, moyenne(v)));
         return trierDecroissant(moyennes);
     }
+
+    /**
+     * Libellés uniques par identifiant : deux éléments homonymes (ex. deux encadrants
+     * « Martin Paul ») sont distingués par leur id, « Martin Paul (#1) ».
+     */
+    public static Map<Long, String> libellesUniques(Map<Long, String> libelles) {
+        Map<String, Long> occurrences = libelles.values().stream()
+                .collect(Collectors.groupingBy(StatistiquesUtils::libelle, Collectors.counting()));
+        Map<Long, String> resultat = new LinkedHashMap<>();
+        libelles.forEach((id, nom) -> {
+            String l = libelle(nom);
+            resultat.put(id, occurrences.get(l) > 1 ? l + " (#" + id + ")" : l);
+        });
+        return resultat;
+    }
 }

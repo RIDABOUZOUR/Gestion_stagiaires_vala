@@ -3,6 +3,7 @@ package com.vala.gestionStagiaires.repository;
 import com.vala.gestionStagiaires.entities.Stage;
 import com.vala.gestionStagiaires.enums.StageStatus;
 import com.vala.gestionStagiaires.repository.projection.ComptageParStatut;
+import com.vala.gestionStagiaires.repository.projection.StageDuree;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -54,4 +55,8 @@ public interface StageRepository extends JpaRepository<Stage,Long>, JpaSpecifica
     List<Stage> findByStatusAndDateFinBetweenOrderByDateFinAsc(StageStatus status, LocalDate debut, LocalDate fin);
 
     long countByStatusAndDateFinBetween(StageStatus status, LocalDate debut, LocalDate fin);
+
+    @Query("SELECT new com.vala.gestionStagiaires.repository.projection.StageDuree(s.id, s.status, s.dateDebut, s.dateFin, e.id, e.nom, e.prenom) "
+            + "FROM Stage s LEFT JOIN s.encadrant e")
+    List<StageDuree> donneesDurees();
 }

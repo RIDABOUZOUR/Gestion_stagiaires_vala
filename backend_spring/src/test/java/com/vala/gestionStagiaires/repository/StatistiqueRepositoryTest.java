@@ -9,6 +9,9 @@ import com.vala.gestionStagiaires.enums.StageStatus;
 import com.vala.gestionStagiaires.repository.projection.ComptageParEncadrant;
 import com.vala.gestionStagiaires.repository.projection.ComptageParLibelle;
 import com.vala.gestionStagiaires.repository.projection.ComptageParStatut;
+import com.vala.gestionStagiaires.repository.projection.ProfilLigne;
+import com.vala.gestionStagiaires.repository.projection.StageDepartement;
+import com.vala.gestionStagiaires.repository.projection.StageDuree;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -125,5 +128,32 @@ class StatistiqueRepositoryTest {
                 .extracting(Stage::getSujet).containsExactly("IA");
         assertThat(stageRepository.countByStatusAndDateFinBetween(
                 StageStatus.EN_COURS, TODAY, TODAY.plusDays(30))).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("durées : un enregistrement par stage avec son encadrant ; départements distincts par stage")
+    void dureesEtDepartements() {
+        assertThat(stageRepository.donneesDurees())
+                .hasSize(3)
+                .extracting(StageDuree::encadrantId)
+                .containsOnly(martin1.getId(), martin2.getId());
+        assertThat(stagiaireRepository.departementsDesStages())
+                .hasSize(2) // deux stagiaires du même stage « IA » dans le même département : une seule ligne
+                .extracting(StageDepartement::departement)
+                .containsOnly("Informatique");
+    }
+
+    @Test
+    @DisplayName("profils : tous les stagiaires, ou ceux d'un département")
+    void profils() {
+        Long idInfo = departementRepository.findAll().stream()
+                .filter(d -> d.getNom().equals("Informatique")).findFirst().orElseThrow().getId();
+        Long idMarketing = departementRepository.findAll().stream()
+                .filter(d -> d.getNom().equals("Marketing")).findFirst().orElseThrow().getId();
+
+        assertThat(stagiaireRepository.profils(null)).hasSize(3)
+                .extracting(ProfilLigne::filiere).containsExactlyInAnyOrder("Génie Info", "Génie Info", null);
+        assertThat(stagiaireRepository.profils(idInfo)).hasSize(3);
+        assertThat(stagiaireRepository.profils(idMarketing)).isEmpty();
     }
 }

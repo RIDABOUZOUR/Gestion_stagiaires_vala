@@ -171,4 +171,23 @@ class StatistiqueControllerTest {
                 .andExpect(jsonPath("$.tauxAcceptation").value(50.0))
                 .andExpect(jsonPath("$.delaiMoyenDecisionJours").value(4.5));
     }
+
+    @Test
+    @DisplayName("GET /statistiques/stages/durees-et-taux et /statistiques/stagiaires/profil")
+    void dureesEtProfil() throws Exception {
+        com.vala.gestionStagiaires.DTOs.stats.IndicateursStages global =
+                new com.vala.gestionStagiaires.DTOs.stats.IndicateursStages(4, 2, 1, 20.5, 66.7, 25.0);
+        when(statistiqueService.dureesEtTaux()).thenReturn(
+                new com.vala.gestionStagiaires.DTOs.stats.DureesEtTaux(global, Map.of(), Map.of("Informatique", global)));
+        when(statistiqueService.profil(2L)).thenReturn(new com.vala.gestionStagiaires.DTOs.stats.ProfilStagiaires(
+                3, ordonne("FEMME", 2L), Map.of(), Map.of(), Map.of(), Map.of()));
+
+        mockMvc.perform(get("/statistiques/stages/durees-et-taux"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.global.dureeMoyenneJours").value(20.5))
+                .andExpect(jsonPath("$.parDepartement.Informatique.tauxAchevement").value(66.7));
+        mockMvc.perform(get("/statistiques/stagiaires/profil").param("departementId", "2"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.parSexe.FEMME").value(2));
+    }
 }

@@ -3,6 +3,8 @@ package com.vala.gestionStagiaires.repository;
 import com.vala.gestionStagiaires.entities.Stagiaire;
 import com.vala.gestionStagiaires.enums.StageStatus;
 import com.vala.gestionStagiaires.repository.projection.ComptageParLibelle;
+import com.vala.gestionStagiaires.repository.projection.ProfilLigne;
+import com.vala.gestionStagiaires.repository.projection.StageDepartement;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -50,6 +52,17 @@ public interface StagiaireRepository extends JpaRepository<Stagiaire,Long>, JpaS
 
     @Query("SELECT new com.vala.gestionStagiaires.repository.projection.ComptageParLibelle(s.organisme, COUNT(s)) FROM Stagiaire s GROUP BY s.organisme")
     List<ComptageParLibelle> compterParOrganisme();
+
+    /** Départements représentés dans chaque stage (via ses stagiaires). */
+    @Query("SELECT DISTINCT new com.vala.gestionStagiaires.repository.projection.StageDepartement(s.stage.id, d.nom) "
+            + "FROM Stagiaire s LEFT JOIN s.departement d")
+    List<StageDepartement> departementsDesStages();
+
+    /** Département, sexe, niveau et filière de chaque stagiaire ; {@code departementId} null = tous. */
+    @Query("SELECT new com.vala.gestionStagiaires.repository.projection.ProfilLigne(d.nom, s.sexe, s.niveau, s.filiere) "
+            + "FROM Stagiaire s LEFT JOIN s.departement d "
+            + "WHERE :departementId IS NULL OR d.id = :departementId")
+    List<ProfilLigne> profils(Long departementId);
 
     /** Stagiaires dont le stage est dans le statut donné (ex. EN_COURS = stagiaires actifs). */
     long countByStageStatus(StageStatus status);

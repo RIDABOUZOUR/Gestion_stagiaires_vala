@@ -2,6 +2,8 @@ package com.vala.gestionStagiaires.service;
 
 import com.vala.gestionStagiaires.DTOs.ResumeStatistiques;
 import com.vala.gestionStagiaires.DTOs.StageDto;
+import com.vala.gestionStagiaires.DTOs.stats.DureesEtTaux;
+import com.vala.gestionStagiaires.DTOs.stats.ProfilStagiaires;
 import com.vala.gestionStagiaires.enums.StageStatus;
 
 import java.util.List;
@@ -34,4 +36,10 @@ public interface StatistiqueService {
     List<StageDto> stagesAEcheance(int jours);
 
     ResumeStatistiques resume();
+
+    /** Durée moyenne, taux d'achèvement et d'annulation : global, par encadrant, par département. */
+    DureesEtTaux dureesEtTaux();
+
+    /** Répartition par sexe, niveau et filière, et croisements par département ; {@code departementId} null = tous. */
+    ProfilStagiaires profil(Long departementId);
 }

@@ -3,6 +3,8 @@ package com.vala.gestionStagiaires.controller;
 import com.vala.gestionStagiaires.DTOs.ResumeStatistiques;
 import com.vala.gestionStagiaires.DTOs.StageDto;
 import com.vala.gestionStagiaires.DTOs.candidature.CandidatureStatistiques;
+import com.vala.gestionStagiaires.DTOs.stats.DureesEtTaux;
+import com.vala.gestionStagiaires.DTOs.stats.ProfilStagiaires;
 import com.vala.gestionStagiaires.DTOs.evaluation.EvaluationStatistiques;
 import com.vala.gestionStagiaires.DTOs.suivi.AssiduiteStatistiques;
 import com.vala.gestionStagiaires.DTOs.suivi.RapportEnRetard;
@@ -65,6 +67,18 @@ public class StatistiqueController {
     public ResponseEntity<List<StageDto>> stagesAEcheance(
             @RequestParam(defaultValue = "" + StatistiqueService.JOURS_ECHEANCE_PAR_DEFAUT) int jours) {
         return ResponseEntity.ok(statistiqueService.stagesAEcheance(jours));
+    }
+
+    /** Durée moyenne, taux d'achèvement et d'annulation des stages : global, par encadrant, par département. */
+    @GetMapping("/stages/durees-et-taux")
+    public ResponseEntity<DureesEtTaux> dureesEtTaux() {
+        return ResponseEntity.ok(statistiqueService.dureesEtTaux());
+    }
+
+    /** Profil des stagiaires (sexe, niveau, filière, croisements par département), éventuellement d'un département. */
+    @GetMapping("/stagiaires/profil")
+    public ResponseEntity<ProfilStagiaires> profil(@RequestParam(required = false) Long departementId) {
+        return ResponseEntity.ok(statistiqueService.profil(departementId));
     }
 
     @GetMapping("/resume")
