@@ -6,6 +6,7 @@ import { EncadrantModel } from '../models/stage.model';
 import { NotificationService } from '../shared/notification/notification.service';
 import { ConfirmService } from '../shared/confirm/confirm.service';
 import { AuthService } from '../services/auth';
+import { extractApiError } from '../shared/api-error';
 
 @Component({
   selector: 'app-encadrants',
@@ -81,7 +82,7 @@ export class Encadrants implements OnInit {
           `L’encadrant « ${encadrant.prenom} ${encadrant.nom} » a été supprimé.`,
         );
       },
-      error: () => this.notifications.error('La suppression a échoué.'),
+      error: (err) => this.notifications.error(extractApiError(err)),
     });
   }
 }

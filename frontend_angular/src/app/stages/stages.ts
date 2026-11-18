@@ -6,6 +6,7 @@ import { StageModel, StageStatus } from '../models/stage.model';
 import { NotificationService } from '../shared/notification/notification.service';
 import { ConfirmService } from '../shared/confirm/confirm.service';
 import { AuthService } from '../services/auth';
+import { extractApiError } from '../shared/api-error';
 import { ExportService } from '../services/export';
 import { enregistrerFichier, messageErreurBlob } from '../shared/telechargement';
 
@@ -124,7 +125,7 @@ export class Stages implements OnInit {
         this.stages = this.stages.filter((item) => item.id !== stage.id);
         this.notifications.success(`Le stage « ${stage.sujet} » a été supprimé.`);
       },
-      error: () => this.notifications.error('La suppression a échoué.'),
+      error: (err) => this.notifications.error(extractApiError(err)),
     });
   }
 }

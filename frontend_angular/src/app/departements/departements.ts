@@ -6,6 +6,7 @@ import { DepartementModel } from '../models/stage.model';
 import { NotificationService } from '../shared/notification/notification.service';
 import { ConfirmService } from '../shared/confirm/confirm.service';
 import { AuthService } from '../services/auth';
+import { extractApiError } from '../shared/api-error';
 
 @Component({
   selector: 'app-departements',
@@ -79,10 +80,7 @@ export class Departements implements OnInit {
         this.departements = this.departements.filter((item) => item.id !== departement.id);
         this.notifications.success(`Le département « ${departement.nom} » a été supprimé.`);
       },
-      error: () =>
-        this.notifications.error(
-          'La suppression a échoué. Le département est peut-être encore utilisé.',
-        ),
+      error: (err) => this.notifications.error(extractApiError(err)),
     });
   }
 }
