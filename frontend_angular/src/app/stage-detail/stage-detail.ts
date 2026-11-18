@@ -8,7 +8,7 @@ import { Stage } from '../services/stage';
 import { Stagiaire } from '../services/stagiaire';
 import { extractApiError } from '../shared/api-error';
 import { ConfirmService } from '../shared/confirm/confirm.service';
-import { STAGE_STATUT, STAGE_TRANSITIONS } from '../shared/libelles';
+import { STAGE_STATUT, STAGE_TRANSITIONS, estStatutFinal } from '../shared/libelles';
 import { NotificationService } from '../shared/notification/notification.service';
 
 interface ActionStatut {
@@ -31,6 +31,7 @@ const ACTIONS: Record<StageStatus, Omit<ActionStatut, 'cible'> | null> = {
   templateUrl: './stage-detail.html',
 })
 export class StageDetail implements OnInit {
+  readonly estFinal = estStatutFinal;
   readonly statuts = STAGE_STATUT;
 
   stage: StageModel | null = null;

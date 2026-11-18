@@ -72,12 +72,12 @@
             <td>{{ u.encadrantNom || '—' }}</td>
             <td>
               <input type="checkbox" class="h-4 w-4 rounded border-slate-300 text-indigo-600" [checked]="u.actif"
-                     [disabled]="estMoi(u)" (change)="modifier(u, { actif: !u.actif })" [attr.aria-label]="'Compte actif : ' + u.email" />
+                     [disabled]="estMoi(u) || action" (change)="modifier(u, { actif: !u.actif })" [attr.aria-label]="'Compte actif : ' + u.email" />
             </td>
             <td class="text-right">
               <div class="flex justify-end gap-1">
                 <button type="button" class="btn btn-ghost py-1 text-xs" (click)="reinitialisation = { id: u.id, motDePasse: '' }">Mot de passe</button>
-                <button *ngIf="!estMoi(u)" type="button" class="btn-icon text-rose-600 hover:bg-rose-50" (click)="supprimer(u)" aria-label="Supprimer le compte">
+                <button *ngIf="!estMoi(u)" type="button" class="btn-icon text-rose-600 hover:bg-rose-50" [disabled]="action" (click)="supprimer(u)" aria-label="Supprimer le compte">
                   <app-icon name="trash"></app-icon>
                 </button>
               </div>
@@ -90,7 +90,7 @@
                 <input [id]="'mdp-' + u.id" type="password" class="input max-w-xs" autocomplete="new-password"
                        [(ngModel)]="reinitialisation!.motDePasse" />
                 <button type="button" class="btn btn-secondary" (click)="reinitialisation = null">Annuler</button>
-                <button type="button" class="btn btn-primary" (click)="changerMotDePasse()">Enregistrer</button>
+                <button type="button" class="btn btn-primary" [disabled]="action" (click)="changerMotDePasse()">Enregistrer</button>
               </div>
             </td>
           </tr>

@@ -76,8 +76,8 @@
         <textarea [id]="'commentaire-' + r.id" rows="2" class="input" [(ngModel)]="examen.commentaire" [ngModelOptions]="{ standalone: true }"></textarea>
         <div class="flex flex-wrap justify-end gap-2">
           <button type="button" class="btn btn-secondary" (click)="examen = null">Fermer</button>
-          <button type="button" class="btn btn-danger" (click)="decider(r, 'a-revoir')">Demander une révision</button>
-          <button type="button" class="btn btn-primary" (click)="decider(r, 'valider')">Valider</button>
+          <button type="button" class="btn btn-danger" [disabled]="decision" (click)="decider(r, 'a-revoir')">Demander une révision</button>
+          <button type="button" class="btn btn-primary" [disabled]="decision" (click)="decider(r, 'valider')">Valider</button>
         </div>
       </div>
     </footer>

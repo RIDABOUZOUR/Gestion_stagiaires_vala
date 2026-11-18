@@ -1,5 +1,5 @@
 import { Component, Input, OnInit } from '@angular/core';
-import { finalize } from 'rxjs';
+import { Subscription, finalize } from 'rxjs';
 import { StageStatus, StagiaireModel } from '../models/stage.model';
 import { Presence, StatutPresence } from '../models/suivi.model';
 import { SuiviService } from '../services/suivi';
@@ -45,6 +45,8 @@ export class StagiairePresences implements OnInit {
   loading = false;
   private presences = new Map<string, Presence>();
   private enregistrement = new Set<string>();
+  /** Chargement du mois en cours : annulé si l'on change de mois avant la réponse. */
+  private chargement?: Subscription;
 
   constructor(
     private readonly suivi: SuiviService,
@@ -111,8 +113,9 @@ export class StagiairePresences implements OnInit {
   charger(): void {
     const premier = `${this.mois}-01`;
     const dernier = `${this.mois}-${String(joursDansLeMois(this.mois)).padStart(2, '0')}`;
+    this.chargement?.unsubscribe(); // une réponse d'un mois précédent ne doit pas écraser l'affichage
     this.loading = true;
-    this.suivi
+    this.chargement = this.suivi
       .presences(this.stagiaire.id, premier, dernier)
       .pipe(finalize(() => (this.loading = false)))
       .subscribe({

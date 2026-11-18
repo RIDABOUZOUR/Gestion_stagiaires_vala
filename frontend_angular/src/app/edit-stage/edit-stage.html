@@ -32,18 +32,9 @@
           <label class="label" for="dateFin">Date de fin <span class="text-rose-500">*</span></label>
           <input id="dateFin" type="date" formControlName="dateFin" class="input" [class.input-invalid]="isInvalid('dateFin')" />
           <p class="field-error" *ngIf="isInvalid('dateFin')">La date de fin est obligatoire.</p>
+          <p class="field-error" *ngIf="form.errors?.['periode'] && (form.get('dateFin')?.touched || form.get('dateFin')?.dirty)">La date de fin doit être postérieure à la date de début.</p>
         </div>
 
-        <div>
-          <label class="label" for="status">Statut <span class="text-rose-500">*</span></label>
-          <select id="status" formControlName="status" class="input" [class.input-invalid]="isInvalid('status')">
-            <option value="PLANIFIE">Planifié</option>
-            <option value="EN_COURS">En cours</option>
-            <option value="TERMINE">Terminé</option>
-            <option value="ANNULE">Annulé</option>
-          </select>
-          <p class="field-error" *ngIf="isInvalid('status')">Le statut est obligatoire.</p>
-        </div>
 
         <div>
           <label class="label" for="encadrant">Encadrant <span class="text-rose-500">*</span></label>

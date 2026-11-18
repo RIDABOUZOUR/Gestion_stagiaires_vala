@@ -32,7 +32,8 @@
         type="search"
         formControlName="keyword"
         class="input pl-10"
-        placeholder="Rechercher un stagiaire..." />
+        placeholder="Rechercher un stagiaire..."
+        aria-label="Rechercher un stagiaire" />
     </form>
   </div>
 
@@ -84,6 +85,7 @@
               </a>
               <button *ngIf="peutGerer"
                 type="button"
+                [disabled]="suppressionEnCours !== null"
                 (click)="handleDeleteStagiaire(s)"
                 class="btn-icon text-rose-600 hover:bg-rose-50"
                 aria-label="Supprimer">
@@ -112,7 +114,8 @@
           </a>
           <button *ngIf="peutGerer"
             type="button"
-            (click)="handleDeleteStagiaire(s)"
+            [disabled]="suppressionEnCours !== null"
+                (click)="handleDeleteStagiaire(s)"
             class="btn-icon text-rose-600 hover:bg-rose-50"
             aria-label="Supprimer">
             <app-icon name="trash"></app-icon>

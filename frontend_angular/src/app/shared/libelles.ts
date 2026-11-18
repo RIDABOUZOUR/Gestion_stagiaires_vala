@@ -19,6 +19,11 @@ export const STAGE_TRANSITIONS: Record<StageStatus, StageStatus[]> = {
   ANNULE: [],
 };
 
+/** Statut final (TERMINE, ANNULE) : le stage n'est plus modifiable. */
+export function estStatutFinal(status: StageStatus | null | undefined): boolean {
+  return !!status && STAGE_TRANSITIONS[status].length === 0;
+}
+
 export const CANDIDATURE_STATUT: Record<CandidatureStatus, { libelle: string; badge: string }> = {
   SOUMISE: { libelle: 'Soumise', badge: 'badge-slate' },
   EN_ETUDE: { libelle: "À l'étude", badge: 'badge-amber' },

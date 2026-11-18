@@ -7,6 +7,7 @@ import { Stage } from '../services/stage';
 import { EncadrantModel, StageModel, StageStatus } from '../models/stage.model';
 import { NotificationService } from '../shared/notification/notification.service';
 import { extractApiError } from '../shared/api-error';
+import { periodeCoherente } from '../shared/validateurs';
 
 @Component({
   selector: 'app-new-stage',
@@ -34,7 +35,7 @@ export class NewStage implements OnInit {
       dateFin: ['', [Validators.required]],
       status: [StageStatus.PLANIFIE, [Validators.required]],
       encadrant: ['', [Validators.required]],
-    });
+    }, { validators: periodeCoherente('dateDebut', 'dateFin') });
 
     this.loadEncadrants();
   }
@@ -47,7 +48,7 @@ export class NewStage implements OnInit {
   private loadEncadrants(): void {
     this.encadrantService.getEncadrants().subscribe({
       next: (data) => (this.encadrantsList = data),
-      error: () => this.notifications.error('Impossible de charger les encadrants.'),
+      error: (err) => this.notifications.error(extractApiError(err)),
     });
   }
 

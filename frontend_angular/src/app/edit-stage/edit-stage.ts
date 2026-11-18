@@ -7,6 +7,8 @@ import { Stage } from '../services/stage';
 import { EncadrantModel, StageModel, StageStatus } from '../models/stage.model';
 import { NotificationService } from '../shared/notification/notification.service';
 import { extractApiError } from '../shared/api-error';
+import { estStatutFinal } from '../shared/libelles';
+import { periodeCoherente } from '../shared/validateurs';
 
 @Component({
   selector: 'app-edit-stage',
@@ -20,6 +22,8 @@ export class EditStage implements OnInit {
   encadrantsList: EncadrantModel[] = [];
   loading = false;
   saving = false;
+  /** Statut actuel, renvoyé tel quel : il se change depuis la fiche du stage (cycle de vie). */
+  private statut: StageStatus = StageStatus.PLANIFIE;
 
   constructor(
     private readonly fb: FormBuilder,
@@ -37,9 +41,8 @@ export class EditStage implements OnInit {
       sujet: ['', [Validators.required, Validators.maxLength(100)]],
       dateDebut: ['', [Validators.required]],
       dateFin: ['', [Validators.required]],
-      status: [StageStatus.PLANIFIE, [Validators.required]],
       encadrant: ['', [Validators.required]],
-    });
+    }, { validators: periodeCoherente('dateDebut', 'dateFin') });
 
     this.loading = true;
     forkJoin({
@@ -49,12 +52,17 @@ export class EditStage implements OnInit {
       .pipe(finalize(() => (this.loading = false)))
       .subscribe({
         next: ({ encadrants, stage }) => {
+          if (estStatutFinal(stage.status)) {
+            this.notifications.error('Un stage terminé ou annulé ne peut plus être modifié.');
+            this.router.navigate(['/stages', this.stageId]);
+            return;
+          }
+          this.statut = stage.status ?? StageStatus.PLANIFIE;
           this.encadrantsList = encadrants;
           this.form.patchValue({
             sujet: stage.sujet,
             dateDebut: stage.dateDebut ? stage.dateDebut.substring(0, 10) : '',
             dateFin: stage.dateFin ? stage.dateFin.substring(0, 10) : '',
-            status: stage.status ?? StageStatus.PLANIFIE,
             encadrant: stage.encadrant?.id ?? '',
           });
         },
@@ -90,7 +98,7 @@ export class EditStage implements OnInit {
       sujet: value.sujet,
       dateDebut: value.dateDebut,
       dateFin: value.dateFin,
-      status: value.status,
+      status: this.statut,
       encadrant,
     };
 

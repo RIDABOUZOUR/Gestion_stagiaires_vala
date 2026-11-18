@@ -150,8 +150,12 @@ export class CandidatureDetail implements OnInit {
     this.departementId = this.candidature?.departementSouhaiteId ?? null;
     this.stageService.getStages().subscribe({
       next: (s) => (this.stagesOuverts = s.filter((x) => x.status === StageStatus.PLANIFIE || x.status === StageStatus.EN_COURS)),
+      error: (err) => this.notifications.error(extractApiError(err)),
     });
-    this.departementService.getDepartements().subscribe({ next: (d) => (this.departements = d) });
+    this.departementService.getDepartements().subscribe({
+      next: (d) => (this.departements = d),
+      error: (err) => this.notifications.error(extractApiError(err)),
+    });
   }
 
   accepter(): void {

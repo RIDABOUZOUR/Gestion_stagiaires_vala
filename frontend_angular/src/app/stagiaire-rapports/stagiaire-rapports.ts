@@ -22,6 +22,8 @@ export class StagiaireRapports implements OnInit {
   rapports: Rapport[] = [];
   loading = false;
   enregistrement = false;
+  /** Décision (validation / révision) en cours d'envoi. */
+  decision = false;
   formulaireOuvert = false;
   /** Rapport en cours de modification (null = nouveau rapport). */
   enEdition: Rapport | null = null;
@@ -135,6 +137,9 @@ export class StagiaireRapports implements OnInit {
   }
 
   decider(r: Rapport, decision: 'valider' | 'a-revoir'): void {
+    if (this.decision) {
+      return;
+    }
     const commentaire = this.examen?.id === r.id ? this.examen.commentaire.trim() : '';
     if (decision === 'a-revoir' && !commentaire) {
       this.notifications.error('Expliquez ce qu’il faut revoir dans le commentaire.');
@@ -143,7 +148,8 @@ export class StagiaireRapports implements OnInit {
     const appel = decision === 'valider'
       ? this.suivi.validerRapport(r.id, commentaire || null)
       : this.suivi.demanderRevision(r.id, commentaire);
-    appel.subscribe({
+    this.decision = true;
+    appel.pipe(finalize(() => (this.decision = false))).subscribe({
       next: (maj) => {
         this.rapports = this.rapports.map((x) => (x.id === maj.id ? maj : x));
         this.examen = null;

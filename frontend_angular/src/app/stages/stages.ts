@@ -9,6 +9,7 @@ import { AuthService } from '../services/auth';
 import { extractApiError } from '../shared/api-error';
 import { ExportService } from '../services/export';
 import { enregistrerFichier, messageErreurBlob } from '../shared/telechargement';
+import { estStatutFinal } from '../shared/libelles';
 
 @Component({
   selector: 'app-stages',
@@ -71,6 +72,8 @@ export class Stages implements OnInit {
     }
   }
 
+  readonly estFinal = estStatutFinal;
+
   statusLabel(status: StageStatus): string {
     switch (status) {
       case StageStatus.PLANIFIE:
@@ -93,7 +96,7 @@ export class Stages implements OnInit {
       .pipe(finalize(() => (this.loading = false)))
       .subscribe({
         next: (data) => (this.stages = data),
-        error: () => this.notifications.error('Impossible de charger la liste des stages.'),
+        error: (err) => this.notifications.error(extractApiError(err)),
       });
   }
 
@@ -105,11 +108,17 @@ export class Stages implements OnInit {
       .pipe(finalize(() => (this.loading = false)))
       .subscribe({
         next: (data) => (this.stages = data),
-        error: () => this.notifications.error('La recherche a échoué.'),
+        error: (err) => this.notifications.error(extractApiError(err)),
       });
   }
 
+  /** Identifiant en cours de suppression : bloque un second clic pendant la requête. */
+  suppressionEnCours: number | null = null;
+
   async handleDeleteStage(stage: StageModel): Promise<void> {
+    if (this.suppressionEnCours !== null) {
+      return;
+    }
     const confirmed = await this.confirm.confirm({
       title: 'Supprimer le stage',
       message: `Voulez-vous vraiment supprimer le stage « ${stage.sujet} » ?`,
@@ -120,7 +129,8 @@ export class Stages implements OnInit {
       return;
     }
 
-    this.stageService.deleteStage(stage.id).subscribe({
+    this.suppressionEnCours = stage.id;
+    this.stageService.deleteStage(stage.id).pipe(finalize(() => (this.suppressionEnCours = null))).subscribe({
       next: () => {
         this.stages = this.stages.filter((item) => item.id !== stage.id);
         this.notifications.success(`Le stage « ${stage.sujet} » a été supprimé.`);

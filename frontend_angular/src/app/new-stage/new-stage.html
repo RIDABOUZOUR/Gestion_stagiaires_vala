@@ -27,6 +27,7 @@
           <label class="label" for="dateFin">Date de fin <span class="text-rose-500">*</span></label>
           <input id="dateFin" type="date" formControlName="dateFin" class="input" [class.input-invalid]="isInvalid('dateFin')" />
           <p class="field-error" *ngIf="isInvalid('dateFin')">La date de fin est obligatoire.</p>
+          <p class="field-error" *ngIf="form.errors?.['periode'] && (form.get('dateFin')?.touched || form.get('dateFin')?.dirty)">La date de fin doit être postérieure à la date de début.</p>
         </div>
 
         <div>

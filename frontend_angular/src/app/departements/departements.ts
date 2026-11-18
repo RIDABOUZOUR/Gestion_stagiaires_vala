@@ -48,7 +48,7 @@ export class Departements implements OnInit {
       .pipe(finalize(() => (this.loading = false)))
       .subscribe({
         next: (data) => (this.departements = data),
-        error: () => this.notifications.error('Impossible de charger la liste des départements.'),
+        error: (err) => this.notifications.error(extractApiError(err)),
       });
   }
 
@@ -60,11 +60,17 @@ export class Departements implements OnInit {
       .pipe(finalize(() => (this.loading = false)))
       .subscribe({
         next: (data) => (this.departements = data),
-        error: () => this.notifications.error('La recherche a échoué.'),
+        error: (err) => this.notifications.error(extractApiError(err)),
       });
   }
 
+  /** Identifiant en cours de suppression : bloque un second clic pendant la requête. */
+  suppressionEnCours: number | null = null;
+
   async handleDeleteDepartement(departement: DepartementModel): Promise<void> {
+    if (this.suppressionEnCours !== null) {
+      return;
+    }
     const confirmed = await this.confirm.confirm({
       title: 'Supprimer le département',
       message: `Voulez-vous vraiment supprimer le département « ${departement.nom} » ?`,
@@ -75,7 +81,8 @@ export class Departements implements OnInit {
       return;
     }
 
-    this.departementService.deleteDepartement(departement.id).subscribe({
+    this.suppressionEnCours = departement.id;
+    this.departementService.deleteDepartement(departement.id).pipe(finalize(() => (this.suppressionEnCours = null))).subscribe({
       next: () => {
         this.departements = this.departements.filter((item) => item.id !== departement.id);
         this.notifications.success(`Le département « ${departement.nom} » a été supprimé.`);

@@ -3,6 +3,9 @@ import { BehaviorSubject, Observable } from 'rxjs';
 
 export type ToastType = 'success' | 'error' | 'info';
 
+/** Durée d'affichage : les erreurs restent plus longtemps, le temps de les lire. */
+const DUREE_MS: Record<ToastType, number> = { success: 4500, info: 4500, error: 8000 };
+
 export interface Toast {
   id: number;
   type: ToastType;
@@ -34,6 +37,6 @@ export class NotificationService {
   private show(type: ToastType, text: string): void {
     const id = ++this.counter;
     this.toastsSubject.next([...this.toastsSubject.value, { id, type, text }]);
-    setTimeout(() => this.dismiss(id), 4500);
+    setTimeout(() => this.dismiss(id), DUREE_MS[type]);
   }
 }

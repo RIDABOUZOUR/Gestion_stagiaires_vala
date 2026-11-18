@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { AbstractControl, FormBuilder, FormGroup, ValidationErrors, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { finalize } from 'rxjs';
 import { DepartementPublic } from '../models/candidature.model';
 import { Sexe } from '../models/stage.model';
@@ -7,15 +7,9 @@ import { AuthService } from '../services/auth';
 import { CandidatureService } from '../services/candidature';
 import { extractApiError } from '../shared/api-error';
 import { erreurCv, tailleLisible } from '../shared/cv';
+import { periodeCoherente } from '../shared/validateurs';
 
 const PHONE_PATTERN = /^(\+\d{1,3}[-. ]?)?\d{10}$/;
-
-/** Période souhaitée cohérente : début avant fin (si les deux sont renseignées). */
-function periodeCoherente(group: AbstractControl): ValidationErrors | null {
-  const debut = group.get('dateDebutSouhaitee')?.value;
-  const fin = group.get('dateFinSouhaitee')?.value;
-  return debut && fin && debut >= fin ? { periode: true } : null;
-}
 
 /**
  * Dépôt d'une candidature. Page publique : accessible sans compte, avec le CV
@@ -61,7 +55,7 @@ export class Postuler implements OnInit {
         dateFinSouhaitee: [''],
         motivation: ['', [Validators.maxLength(4000)]],
       },
-      { validators: periodeCoherente },
+      { validators: periodeCoherente('dateDebutSouhaitee', 'dateFinSouhaitee') },
     );
     // Liste facultative : en cas d'échec, le candidat garde « Sans préférence ».
     this.candidatureService.departements().subscribe({ next: (d) => (this.departements = d), error: () => undefined });

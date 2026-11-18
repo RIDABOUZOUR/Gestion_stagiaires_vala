@@ -60,14 +60,14 @@ export class NewStagiaire implements OnInit {
   private loadDepartements(): void {
     this.departementService.getDepartements().subscribe({
       next: (data) => (this.departementsList = data),
-      error: () => this.notifications.error('Impossible de charger les départements.'),
+      error: (err) => this.notifications.error(extractApiError(err)),
     });
   }
 
   private loadStages(): void {
     this.stageService.getStages().subscribe({
       next: (data) => (this.stagesList = data),
-      error: () => this.notifications.error('Impossible de charger les stages.'),
+      error: (err) => this.notifications.error(extractApiError(err)),
     });
   }
 

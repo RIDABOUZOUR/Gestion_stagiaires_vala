@@ -27,7 +27,8 @@
         type="search"
         formControlName="keyword"
         class="input pl-10"
-        placeholder="Rechercher un département..." />
+        placeholder="Rechercher un département..."
+        aria-label="Rechercher un département" />
     </form>
   </div>
 
@@ -69,6 +70,7 @@
               </a>
               <button *ngIf="peutGerer"
                 type="button"
+                [disabled]="suppressionEnCours !== null"
                 (click)="handleDeleteDepartement(d)"
                 class="btn-icon text-rose-600 hover:bg-rose-50"
                 aria-label="Supprimer">
@@ -96,7 +98,8 @@
         </a>
         <button *ngIf="peutGerer"
           type="button"
-          (click)="handleDeleteDepartement(d)"
+          [disabled]="suppressionEnCours !== null"
+                (click)="handleDeleteDepartement(d)"
           class="btn-icon text-rose-600 hover:bg-rose-50"
           aria-label="Supprimer">
           <app-icon name="trash"></app-icon>

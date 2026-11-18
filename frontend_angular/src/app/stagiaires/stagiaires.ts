@@ -65,7 +65,7 @@ export class Stagiaires implements OnInit {
       .pipe(finalize(() => (this.loading = false)))
       .subscribe({
         next: (data) => (this.stagiaires = data),
-        error: () => this.notifications.error('Impossible de charger la liste des stagiaires.'),
+        error: (err) => this.notifications.error(extractApiError(err)),
       });
   }
 
@@ -77,11 +77,17 @@ export class Stagiaires implements OnInit {
       .pipe(finalize(() => (this.loading = false)))
       .subscribe({
         next: (data) => (this.stagiaires = data),
-        error: () => this.notifications.error('La recherche a échoué.'),
+        error: (err) => this.notifications.error(extractApiError(err)),
       });
   }
 
+  /** Identifiant en cours de suppression : bloque un second clic pendant la requête. */
+  suppressionEnCours: number | null = null;
+
   async handleDeleteStagiaire(stagiaire: StagiaireModel): Promise<void> {
+    if (this.suppressionEnCours !== null) {
+      return;
+    }
     const confirmed = await this.confirm.confirm({
       title: 'Supprimer le stagiaire',
       message: `Voulez-vous vraiment supprimer « ${stagiaire.prenom} ${stagiaire.nom} » ?`,
@@ -92,7 +98,8 @@ export class Stagiaires implements OnInit {
       return;
     }
 
-    this.stagiaireService.deleteStagiaire(stagiaire.id).subscribe({
+    this.suppressionEnCours = stagiaire.id;
+    this.stagiaireService.deleteStagiaire(stagiaire.id).pipe(finalize(() => (this.suppressionEnCours = null))).subscribe({
       next: () => {
         this.stagiaires = this.stagiaires.filter((item) => item.id !== stagiaire.id);
         this.notifications.success(

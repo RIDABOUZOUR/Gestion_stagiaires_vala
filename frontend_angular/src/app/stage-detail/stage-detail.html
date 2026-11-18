@@ -30,7 +30,7 @@
           (click)="executer(a)">
           {{ a.libelle }}
         </button>
-        <a [routerLink]="['/edit-stage', stage.id]" class="btn btn-ghost">
+        <a *ngIf="!estFinal(stage.status)" [routerLink]="['/edit-stage', stage.id]" class="btn btn-ghost">
           <app-icon name="pencil-square" size="h-4 w-4"></app-icon>
           Modifier
         </a>

@@ -25,6 +25,8 @@ export class Utilisateurs implements OnInit {
   loading = false;
   formulaireOuvert = false;
   enregistrement = false;
+  /** Une action sur un compte existant (rôle, activation, mot de passe, suppression) est en cours. */
+  action = false;
   form!: FormGroup;
 
   /** Réinitialisation du mot de passe en cours : compte et nouveau mot de passe saisi. */
@@ -46,7 +48,10 @@ export class Utilisateurs implements OnInit {
       role: ['RH' as Role, [Validators.required]],
       encadrantId: [null as number | null],
     });
-    this.encadrantService.getEncadrants().subscribe({ next: (e) => (this.encadrants = e) });
+    this.encadrantService.getEncadrants().subscribe({
+      next: (e) => (this.encadrants = e),
+      error: (err) => this.notifications.error(extractApiError(err)),
+    });
     this.charger();
   }
 
@@ -113,8 +118,10 @@ export class Utilisateurs implements OnInit {
       this.charger();
       return;
     }
+    this.action = true;
     this.utilisateurService
       .modifier(u.id, { role, actif: changement.actif ?? u.actif, encadrantId: role === 'ENCADRANT' ? u.encadrantId : null })
+      .pipe(finalize(() => (this.action = false)))
       .subscribe({
         next: (maj) => {
           this.utilisateurs = this.utilisateurs.map((x) => (x.id === maj.id ? maj : x));
@@ -133,7 +140,8 @@ export class Utilisateurs implements OnInit {
       this.notifications.error('Le mot de passe doit contenir entre 8 et 72 caractères.');
       return;
     }
-    this.utilisateurService.changerMotDePasse(r.id, r.motDePasse).subscribe({
+    this.action = true;
+    this.utilisateurService.changerMotDePasse(r.id, r.motDePasse).pipe(finalize(() => (this.action = false))).subscribe({
       next: () => {
         this.reinitialisation = null;
         this.notifications.success('Mot de passe modifié.');
@@ -143,6 +151,9 @@ export class Utilisateurs implements OnInit {
   }
 
   async supprimer(u: Utilisateur): Promise<void> {
+    if (this.action) {
+      return;
+    }
     const ok = await this.confirm.confirm({
       title: 'Supprimer le compte',
       message: `Le compte ${u.email} ne pourra plus se connecter.`,
@@ -152,7 +163,8 @@ export class Utilisateurs implements OnInit {
     if (!ok) {
       return;
     }
-    this.utilisateurService.supprimer(u.id).subscribe({
+    this.action = true;
+    this.utilisateurService.supprimer(u.id).pipe(finalize(() => (this.action = false))).subscribe({
       next: () => {
         this.utilisateurs = this.utilisateurs.filter((x) => x.id !== u.id);
         this.notifications.success(`Compte ${u.email} supprimé.`);

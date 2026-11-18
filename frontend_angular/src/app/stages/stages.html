@@ -29,7 +29,8 @@
         type="search"
         formControlName="keyword"
         class="input pl-10"
-        placeholder="Rechercher un stage..." />
+        placeholder="Rechercher un stage..."
+        aria-label="Rechercher un stage" />
     </form>
   </div>
 
@@ -71,7 +72,7 @@
           <td>{{ s.encadrant.nom }} {{ s.encadrant.prenom }}</td>
           <td class="text-right">
             <div class="flex justify-end gap-1">
-              <a *ngIf="peutGerer"
+              <a *ngIf="peutGerer && !estFinal(s.status)"
                 [routerLink]="['/edit-stage', s.id]"
                 class="btn-icon text-indigo-600 hover:bg-indigo-50"
                 aria-label="Modifier">
@@ -79,6 +80,7 @@
               </a>
               <button *ngIf="peutGerer"
                 type="button"
+                [disabled]="suppressionEnCours !== null"
                 (click)="handleDeleteStage(s)"
                 class="btn-icon text-rose-600 hover:bg-rose-50"
                 aria-label="Supprimer">
@@ -101,7 +103,7 @@
           </p>
         </div>
         <div class="flex shrink-0 gap-1">
-          <a *ngIf="peutGerer"
+          <a *ngIf="peutGerer && !estFinal(s.status)"
             [routerLink]="['/edit-stage', s.id]"
             class="btn-icon text-indigo-600 hover:bg-indigo-50"
             aria-label="Modifier">
@@ -109,7 +111,8 @@
           </a>
           <button *ngIf="peutGerer"
             type="button"
-            (click)="handleDeleteStage(s)"
+            [disabled]="suppressionEnCours !== null"
+                (click)="handleDeleteStage(s)"
             class="btn-icon text-rose-600 hover:bg-rose-50"
             aria-label="Supprimer">
             <app-icon name="trash"></app-icon>

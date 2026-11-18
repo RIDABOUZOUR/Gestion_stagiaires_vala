@@ -19,6 +19,9 @@ export class ConfirmService {
   readonly state$: Observable<ConfirmState | null> = this.stateSubject.asObservable();
 
   confirm(options: ConfirmOptions): Promise<boolean> {
+    // Une confirmation encore ouverte est remplacée : on la considère comme annulée,
+    // sinon sa promesse resterait en attente pour toujours.
+    this.stateSubject.value?.resolve(false);
     return new Promise<boolean>((resolve) => {
       this.stateSubject.next({ ...options, resolve });
     });

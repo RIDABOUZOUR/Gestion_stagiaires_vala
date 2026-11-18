@@ -40,7 +40,10 @@ export class Candidatures implements OnInit {
 
   ngOnInit(): void {
     this.filtres = this.fb.group({ keyword: [''], statut: [''], departementId: [''] });
-    this.departementService.getDepartements().subscribe({ next: (d) => (this.departements = d) });
+    this.departementService.getDepartements().subscribe({
+      next: (d) => (this.departements = d),
+      error: (err) => this.notifications.error(extractApiError(err)),
+    });
     this.charger();
   }
 

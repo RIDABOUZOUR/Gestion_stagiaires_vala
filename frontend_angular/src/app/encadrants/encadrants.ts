@@ -48,7 +48,7 @@ export class Encadrants implements OnInit {
       .pipe(finalize(() => (this.loading = false)))
       .subscribe({
         next: (data) => (this.encadrants = data),
-        error: () => this.notifications.error('Impossible de charger la liste des encadrants.'),
+        error: (err) => this.notifications.error(extractApiError(err)),
       });
   }
 
@@ -60,11 +60,17 @@ export class Encadrants implements OnInit {
       .pipe(finalize(() => (this.loading = false)))
       .subscribe({
         next: (data) => (this.encadrants = data),
-        error: () => this.notifications.error('La recherche a échoué.'),
+        error: (err) => this.notifications.error(extractApiError(err)),
       });
   }
 
+  /** Identifiant en cours de suppression : bloque un second clic pendant la requête. */
+  suppressionEnCours: number | null = null;
+
   async handleDeleteEncadrant(encadrant: EncadrantModel): Promise<void> {
+    if (this.suppressionEnCours !== null) {
+      return;
+    }
     const confirmed = await this.confirm.confirm({
       title: 'Supprimer l’encadrant',
       message: `Voulez-vous vraiment supprimer « ${encadrant.prenom} ${encadrant.nom} » ?`,
@@ -75,7 +81,8 @@ export class Encadrants implements OnInit {
       return;
     }
 
-    this.encadrantService.deleteEncadrant(encadrant.id).subscribe({
+    this.suppressionEnCours = encadrant.id;
+    this.encadrantService.deleteEncadrant(encadrant.id).pipe(finalize(() => (this.suppressionEnCours = null))).subscribe({
       next: () => {
         this.encadrants = this.encadrants.filter((item) => item.id !== encadrant.id);
         this.notifications.success(

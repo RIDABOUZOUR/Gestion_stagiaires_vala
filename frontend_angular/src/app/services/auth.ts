@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, PLATFORM_ID, computed, inject, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
+import { Router } from '@angular/router';
 import { Observable, map, tap } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { LoginResponse, Role, Session } from '../models/auth.model';
@@ -19,12 +20,18 @@ const CLE_STOCKAGE = 'gestion-stagiaires.session';
 })
 export class AuthService {
   private readonly http = inject(HttpClient);
+  private readonly router = inject(Router);
   private readonly navigateur = isPlatformBrowser(inject(PLATFORM_ID));
   private readonly session = signal<Session | null>(this.restaurer());
+  private minuterieExpiration: ReturnType<typeof setTimeout> | null = null;
 
   readonly utilisateur = this.session.asReadonly();
   readonly estConnecte = computed(() => this.session() !== null);
   readonly role = computed<Role | null>(() => this.session()?.role ?? null);
+
+  constructor() {
+    this.programmerExpiration(this.session());
+  }
 
   connecter(email: string, motDePasse: string): Observable<Session> {
     return this.http
@@ -42,6 +49,7 @@ export class AuthService {
   }
 
   deconnecter(): void {
+    this.annulerMinuterie();
     this.session.set(null);
     if (this.navigateur) {
       try {
@@ -80,12 +88,41 @@ export class AuthService {
 
   private ouvrir(session: Session): void {
     this.session.set(session);
+    this.programmerExpiration(session);
     if (this.navigateur) {
       try {
         sessionStorage.setItem(CLE_STOCKAGE, JSON.stringify(session));
       } catch {
         // idem : la session reste valable pour cet onglet
       }
+    }
+  }
+
+  /**
+   * Ferme la session à l'heure d'expiration du jeton, même sans appel à l'API :
+   * sinon les guards laisseraient naviguer jusqu'au premier 401.
+   */
+  private programmerExpiration(session: Session | null): void {
+    this.annulerMinuterie();
+    if (!this.navigateur || !session) {
+      return;
+    }
+    // setTimeout est limité à ~24,8 jours ; au-delà, on reprogramme à l'échéance.
+    const delai = Math.min(Math.max(session.expiresAt - Date.now(), 0), 2_147_000_000);
+    this.minuterieExpiration = setTimeout(() => {
+      if (session.expiresAt > Date.now()) {
+        this.programmerExpiration(session);
+        return;
+      }
+      this.deconnecter();
+      this.router.navigate(['/login'], { queryParams: { expire: 1 } });
+    }, delai);
+  }
+
+  private annulerMinuterie(): void {
+    if (this.minuterieExpiration !== null) {
+      clearTimeout(this.minuterieExpiration);
+      this.minuterieExpiration = null;
     }
   }
 
