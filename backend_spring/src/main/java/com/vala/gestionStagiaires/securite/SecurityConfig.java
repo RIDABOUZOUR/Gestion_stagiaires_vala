@@ -1,5 +1,6 @@
 package com.vala.gestionStagiaires.securite;
 
+import com.vala.gestionStagiaires.repository.UtilisateurRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -9,6 +10,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtValidators;
@@ -89,9 +91,11 @@ public class SecurityConfig {
     }
 
     @Bean
-    public JwtDecoder jwtDecoder(SecretKey cleJwt, SecuriteProperties proprietes) {
+    public JwtDecoder jwtDecoder(SecretKey cleJwt, SecuriteProperties proprietes, UtilisateurRepository utilisateurRepository) {
         NimbusJwtDecoder decoder = NimbusJwtDecoder.withSecretKey(cleJwt).macAlgorithm(MacAlgorithm.HS256).build();
-        decoder.setJwtValidator(JwtValidators.createDefaultWithIssuer(proprietes.emetteur()));
+        decoder.setJwtValidator(new DelegatingOAuth2TokenValidator<>(
+                JwtValidators.createDefaultWithIssuer(proprietes.emetteur()),
+                new CompteActifValidator(utilisateurRepository)));
         return decoder;
     }
 

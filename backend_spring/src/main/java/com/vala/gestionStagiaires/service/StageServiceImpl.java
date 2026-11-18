@@ -101,6 +101,10 @@ public class StageServiceImpl implements StageService {
     public StageDto updateStage(StageDto stageDto, Long id) {
         Stage existingStage = findStage(id);
         StageStatus ancien = existingStage.getStatus();
+        if (ancien != null && ancien.isFinal()) {
+            // Figé : changer l'encadrant transférerait la visibilité de l'évaluation et de l'attestation.
+            throw new BusinessRuleException("Un stage " + ancien + " ne peut plus être modifié.");
+        }
 
         StageStatus cible = stageDto.getStatus() != null ? stageDto.getStatus() : existingStage.getStatus();
         verifierTransition(existingStage.getStatus(), cible);

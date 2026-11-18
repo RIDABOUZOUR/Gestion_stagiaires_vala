@@ -68,6 +68,7 @@ public class CandidatureController {
                 .contentType(MediaType.APPLICATION_PDF)
                 .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.inline().filename(cv.nomFichier()).build().toString())
                 .header("X-Content-Type-Options", "nosniff")
+                .header("Content-Security-Policy", "sandbox") // neutralise un éventuel PDF piégé ouvert directement
                 .body(cv.contenu());
     }
 

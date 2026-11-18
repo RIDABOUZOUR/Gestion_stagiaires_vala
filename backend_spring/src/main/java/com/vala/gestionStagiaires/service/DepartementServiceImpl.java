@@ -32,6 +32,7 @@ public class DepartementServiceImpl implements DepartementService{
     @Override
     public DepartementDto addDepartement(DepartementDto departementDto) {
         Departement departement = departementMapper.fromDepartementDto(departementDto);
+        departement.setId(null);
         return departementMapper.fromDepartement(departementRepository.save(departement));
     }
 

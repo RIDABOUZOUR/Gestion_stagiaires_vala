@@ -1,5 +1,7 @@
 package com.vala.gestionStagiaires.aspect;
 
+import com.vala.gestionStagiaires.exceptions.BusinessRuleException;
+import com.vala.gestionStagiaires.exceptions.ResourceNotFoundException;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -75,7 +77,12 @@ public class LoggingAspect {
             return result;
         } catch (Throwable ex) {
             long duration = System.currentTimeMillis() - start;
-            log.error("✗ {} échoué en {} ms : {}", method, duration, ex.getMessage(), ex);
+            if (ex instanceof BusinessRuleException || ex instanceof ResourceNotFoundException) {
+                // Refus métier attendu (409 / 404) : pas une panne, inutile d'imprimer la pile.
+                log.warn("✗ {} refusé en {} ms : {}", method, duration, ex.getMessage());
+            } else {
+                log.error("✗ {} échoué en {} ms : {}", method, duration, ex.getMessage(), ex);
+            }
             throw ex;
         }
     }

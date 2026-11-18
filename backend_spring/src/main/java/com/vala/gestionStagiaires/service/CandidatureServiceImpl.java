@@ -61,8 +61,8 @@ public class CandidatureServiceImpl implements CandidatureService {
     @Override
     public CandidatureDto soumettre(CandidatureRequest request, FichierCv cv) {
         if (candidatureRepository.existsByEmailIgnoreCaseAndStatutIn(request.email(), CandidatureStatus.ACTIVES)) {
-            throw new BusinessRuleException("Une candidature est déjà en cours de traitement pour l'email "
-                    + request.email() + ".");
+            // Message sans écho de l'adresse saisie (endpoint public).
+            throw new BusinessRuleException("Une candidature est déjà en cours de traitement pour cette adresse email.");
         }
         Candidature candidature = Candidature.builder()
                 .statut(CandidatureStatus.SOUMISE)

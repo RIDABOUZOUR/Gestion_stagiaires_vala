@@ -2,8 +2,11 @@ package com.vala.gestionStagiaires.repository;
 
 import com.vala.gestionStagiaires.entities.Utilisateur;
 import com.vala.gestionStagiaires.enums.Role;
+import com.vala.gestionStagiaires.repository.projection.EtatCompte;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -25,4 +28,8 @@ public interface UtilisateurRepository extends JpaRepository<Utilisateur, Long> 
     boolean existsByEncadrantIdAndIdNot(Long encadrantId, Long id);
 
     long countByRoleAndActifTrue(Role role);
+
+    @Query("SELECT new com.vala.gestionStagiaires.repository.projection.EtatCompte(u.actif, u.role, e.id) "
+            + "FROM Utilisateur u LEFT JOIN u.encadrant e WHERE u.id = :id")
+    Optional<EtatCompte> etatCompte(@Param("id") Long id);
 }
