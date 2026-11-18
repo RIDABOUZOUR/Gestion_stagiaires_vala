@@ -94,7 +94,7 @@ docker compose up --build
 # 3. Accéder à l'application
 #    Frontend : http://localhost:4000   (connexion avec ADMIN_EMAIL / ADMIN_PASSWORD)
 #    Backend  : http://localhost:8080
-#    Swagger  : http://localhost:8080/swagger-ui/index.html
+#    Swagger  : http://localhost:8080/swagger-ui/index.html  (avec SPRINGDOC_ENABLED=true dans .env)
 ```
 
 Le compte administrateur est créé au **premier démarrage**, si la base ne contient encore aucun utilisateur.

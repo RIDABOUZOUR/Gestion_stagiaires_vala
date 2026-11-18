@@ -58,8 +58,9 @@ const contentSecurityPolicy = [
   "font-src 'self' https://fonts.gstatic.com data:",
   // Angular inligne le CSS critique et les polices Google fournissent une feuille de style.
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-  // Angular SSR (event replay) injecte un script inline avant l'hydratation.
-  "script-src 'self' 'unsafe-inline'",
+  // Rendu 100 % client (app.routes.server.ts) et CSS critique non inligné (angular.json) :
+  // aucun script inline, donc pas de 'unsafe-inline' pour les scripts.
+  "script-src 'self'",
   `connect-src ${connectSrc}`,
   'upgrade-insecure-requests',
 ].join('; ');
