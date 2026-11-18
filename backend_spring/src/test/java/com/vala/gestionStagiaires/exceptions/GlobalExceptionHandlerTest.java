@@ -7,6 +7,10 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.mock.http.MockHttpInputMessage;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -129,5 +133,43 @@ class GlobalExceptionHandlerTest {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(response.getBody()).containsEntry("message", "Tri invalide : propriété inconnue « inconnu ».");
+    }
+
+    @Test
+    @DisplayName("paramètre de requête manquant -> 400 avec son nom")
+    void handleParametreManquant_shouldReturn400() {
+        ResponseEntity<Map<String, Object>> response =
+                handler.handleParametreManquant(new MissingServletRequestParameterException("keyword", "String"));
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody()).containsEntry("message", "Paramètre manquant : keyword.");
+    }
+
+    @Test
+    @DisplayName("refus de @PreAuthorize -> 403 (et non 500 via le filet de sécurité)")
+    void handleAccesRefuse_shouldReturn403() {
+        ResponseEntity<Map<String, Object>> response = handler.handleAccesRefuse(new AccessDeniedException("refusé"));
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(response.getBody()).containsEntry("status", 403);
+    }
+
+    @Test
+    @DisplayName("erreur du framework -> son propre code HTTP, au format JSON de l'API")
+    void handleInattendue_shouldKeepFrameworkStatus() {
+        assertThat(handler.handleInattendue(new HttpRequestMethodNotSupportedException("PATCH")).getStatusCode())
+                .isEqualTo(HttpStatus.METHOD_NOT_ALLOWED);
+        assertThat(handler.handleInattendue(new HttpMediaTypeNotSupportedException("text/plain")).getStatusCode())
+                .isEqualTo(HttpStatus.UNSUPPORTED_MEDIA_TYPE);
+    }
+
+    @Test
+    @DisplayName("exception inattendue -> 500 sans détail technique")
+    void handleInattendue_shouldReturn500WithoutDetails() {
+        ResponseEntity<Map<String, Object>> response =
+                handler.handleInattendue(new IllegalStateException("détail interne sensible"));
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+        assertThat(response.getBody()).containsEntry("message", "Erreur interne du serveur.");
     }
 }

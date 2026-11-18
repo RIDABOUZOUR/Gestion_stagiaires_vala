@@ -1,6 +1,7 @@
 package com.vala.gestionStagiaires.securite;
 
 import com.vala.gestionStagiaires.entities.Departement;
+import com.vala.gestionStagiaires.entities.RapportHebdomadaire;
 import com.vala.gestionStagiaires.entities.Encadrant;
 import com.vala.gestionStagiaires.entities.Stage;
 import com.vala.gestionStagiaires.entities.Stagiaire;
@@ -8,8 +9,10 @@ import com.vala.gestionStagiaires.entities.Utilisateur;
 import com.vala.gestionStagiaires.enums.Role;
 import com.vala.gestionStagiaires.enums.Sexe;
 import com.vala.gestionStagiaires.enums.StageStatus;
+import com.vala.gestionStagiaires.enums.StatutRapport;
 import com.vala.gestionStagiaires.repository.DepartementRepository;
 import com.vala.gestionStagiaires.repository.EncadrantRepository;
+import com.vala.gestionStagiaires.repository.RapportHebdomadaireRepository;
 import com.vala.gestionStagiaires.repository.StageRepository;
 import com.vala.gestionStagiaires.repository.StagiaireRepository;
 import com.vala.gestionStagiaires.repository.UtilisateurRepository;
@@ -28,13 +31,17 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.DayOfWeek;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.temporal.TemporalAdjusters;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -60,6 +67,7 @@ class SecuriteIntegrationTest {
     @Autowired private DepartementRepository departementRepository;
     @Autowired private StageRepository stageRepository;
     @Autowired private StagiaireRepository stagiaireRepository;
+    @Autowired private RapportHebdomadaireRepository rapportRepository;
 
     private String jetonAdmin;
     private String jetonRh;
@@ -67,6 +75,8 @@ class SecuriteIntegrationTest {
     private Stagiaire stagiaireDuMartin;
     private Stagiaire stagiaireDuBernard;
     private Stage stageDuBernard;
+    private Utilisateur compteEncadrant;
+    private RapportHebdomadaire rapportDuBernard;
 
     @BeforeEach
     void setUp() {
@@ -80,7 +90,14 @@ class SecuriteIntegrationTest {
 
         jetonAdmin = jeton(compte("admin@vala.ma", Role.ADMIN, null));
         jetonRh = jeton(compte("rh@vala.ma", Role.RH, null));
-        jetonEncadrant = jeton(compte("paul.compte@vala.ma", Role.ENCADRANT, martin));
+        compteEncadrant = compte("paul.compte@vala.ma", Role.ENCADRANT, martin);
+        jetonEncadrant = jeton(compteEncadrant);
+        rapportDuBernard = rapportRepository.save(RapportHebdomadaire.builder().stagiaire(stagiaireDuBernard)
+                .semaine(lundi()).travauxRealises("Maquettes").dateDepot(Instant.now()).statut(StatutRapport.SOUMIS).build());
+    }
+
+    private static LocalDate lundi() {
+        return LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
     }
 
     private static Stage stage(String sujet, Encadrant encadrant) {
@@ -125,6 +142,31 @@ class SecuriteIntegrationTest {
             mockMvc.perform(avec(get("/stagiaires"), jetonRh.substring(0, jetonRh.length() - 4) + "abcd"))
                     .andExpect(status().isUnauthorized())
                     .andExpect(jsonPath("$.message").value("Session expirée ou jeton invalide : reconnectez-vous."));
+        }
+
+        @Test
+        @DisplayName("compte désactivé après l'émission du jeton : 401")
+        void compteDesactive() throws Exception {
+            mockMvc.perform(avec(get("/stagiaires"), jetonEncadrant)).andExpect(status().isOk());
+            compteEncadrant.setActif(false);
+            utilisateurRepository.saveAndFlush(compteEncadrant);
+
+            mockMvc.perform(avec(get("/stagiaires"), jetonEncadrant))
+                    .andExpect(status().isUnauthorized())
+                    .andExpect(jsonPath("$.status").value(401));
+        }
+
+        @Test
+        @DisplayName("compte supprimé ou rôle modifié après l'émission du jeton : 401")
+        void compteSupprimeOuRoleModifie() throws Exception {
+            Utilisateur rh = utilisateurRepository.findByEmailIgnoreCase("rh@vala.ma").orElseThrow();
+            rh.setRole(Role.ADMIN);
+            utilisateurRepository.saveAndFlush(rh);
+            mockMvc.perform(avec(get("/utilisateurs"), jetonRh)).andExpect(status().isUnauthorized());
+
+            utilisateurRepository.delete(compteEncadrant);
+            utilisateurRepository.flush();
+            mockMvc.perform(avec(get("/stagiaires"), jetonEncadrant)).andExpect(status().isUnauthorized());
         }
 
         @Test
@@ -273,6 +315,40 @@ class SecuriteIntegrationTest {
                             .contentType(MediaType.APPLICATION_JSON).content("{\"statut\":\"PRESENT\"}"))
                     .andExpect(status().isOk());
             mockMvc.perform(avec(get("/stagiaires/" + stagiaireDuBernard.getId()), jetonRh)).andExpect(status().isOk());
+        }
+
+        @Test
+        @DisplayName("recherche filtrée sur les stagiaires et stages de l'encadrant")
+        void rechercheFiltree() throws Exception {
+            mockMvc.perform(avec(get("/stagiaires/search").param("keyword", "Nom"), jetonEncadrant))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$", hasSize(1)))
+                    .andExpect(jsonPath("$[0].id").value(stagiaireDuMartin.getId()));
+            mockMvc.perform(avec(get("/stages"), jetonEncadrant))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$", hasSize(1)))
+                    .andExpect(jsonPath("$[0].sujet").value("IA"));
+        }
+
+        @Test
+        @DisplayName("rapport, évaluation et historique d'un autre encadrant : 403 au format JSON")
+        void suiviDUnAutreEncadrant() throws Exception {
+            String corps = "{\"semaine\":\"" + lundi() + "\",\"travauxRealises\":\"Modifié\"}";
+            mockMvc.perform(avec(get("/rapports/" + rapportDuBernard.getId()), jetonEncadrant))
+                    .andExpect(status().isForbidden())
+                    .andExpect(jsonPath("$.status").value(403));
+            mockMvc.perform(avec(put("/rapports/" + rapportDuBernard.getId()), jetonEncadrant)
+                    .contentType(MediaType.APPLICATION_JSON).content(corps)).andExpect(status().isForbidden());
+            mockMvc.perform(avec(patch("/rapports/" + rapportDuBernard.getId() + "/valider"), jetonEncadrant))
+                    .andExpect(status().isForbidden());
+            mockMvc.perform(avec(get("/stagiaires/" + stagiaireDuBernard.getId() + "/rapports"), jetonEncadrant))
+                    .andExpect(status().isForbidden());
+            mockMvc.perform(avec(get("/stagiaires/" + stagiaireDuBernard.getId() + "/evaluation"), jetonEncadrant))
+                    .andExpect(status().isForbidden());
+            mockMvc.perform(avec(get("/stages/" + stageDuBernard.getId() + "/historique"), jetonEncadrant))
+                    .andExpect(status().isForbidden());
+
+            mockMvc.perform(avec(get("/rapports/" + rapportDuBernard.getId()), jetonRh)).andExpect(status().isOk());
         }
 
         @Test

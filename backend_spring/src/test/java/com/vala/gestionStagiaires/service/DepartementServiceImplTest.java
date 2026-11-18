@@ -92,6 +92,19 @@ class DepartementServiceImplTest {
     }
 
     @Test
+    @DisplayName("addDepartement() ignore un id fourni : crée, n'écrase jamais un département existant")
+    void addDepartement_shouldIgnoreProvidedId() {
+        DepartementDto input = dto(1L, "Finance", "Mme Martin");
+        Departement toSave = entity(1L, "Finance", "Mme Martin");
+        when(departementMapper.fromDepartementDto(input)).thenReturn(toSave);
+        when(departementRepository.save(toSave)).thenReturn(toSave);
+
+        departementService.addDepartement(input);
+
+        assertThat(toSave.getId()).isNull();
+    }
+
+    @Test
     @DisplayName("searchDepartement() filtre par nom")
     void searchDepartement_shouldReturnMappedList() {
         Departement d1 = entity(1L, "Informatique", "M. Dupont");

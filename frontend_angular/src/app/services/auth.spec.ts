@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { Router } from '@angular/router';
 import { environment } from '../../environments/environment';
 import { AuthService } from './auth';
 
@@ -64,5 +65,22 @@ describe('AuthService', () => {
 
     expect(service.token).toBeNull();
     expect(service.estConnecte()).toBeFalse();
+  });
+
+  describe("à l'expiration du jeton", () => {
+    beforeEach(() => jasmine.clock().install());
+    afterEach(() => jasmine.clock().uninstall());
+
+    it('ferme la session et renvoie vers la connexion sans attendre un appel API', () => {
+      const navigate = spyOn(TestBed.inject(Router), 'navigate').and.resolveTo(true);
+      connecter('RH', new Date(Date.now() + 1_000).toISOString());
+      expect(service.estConnecte()).toBeTrue();
+
+      jasmine.clock().mockDate(new Date(Date.now() + 1_001));
+      jasmine.clock().tick(1_001);
+
+      expect(service.estConnecte()).toBeFalse();
+      expect(navigate).toHaveBeenCalledWith(['/login'], { queryParams: { expire: 1 } });
+    });
   });
 });

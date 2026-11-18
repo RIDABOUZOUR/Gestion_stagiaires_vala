@@ -248,6 +248,19 @@ class StageServiceImplTest {
             assertThat(existing.getStatus()).isEqualTo(StageStatus.EN_COURS);
         }
 
+        @org.junit.jupiter.params.ParameterizedTest
+        @org.junit.jupiter.params.provider.EnumSource(value = StageStatus.class, names = {"TERMINE", "ANNULE"})
+        @DisplayName("refuse toute modification d'un stage terminé ou annulé (même sans changer le statut)")
+        void shouldRefuseUpdateOfFinalStage(StageStatus statutFinal) {
+            StageDto input = stageDto(null, "Nouveau sujet", statutFinal);
+            when(stageRepository.findById(1L)).thenReturn(Optional.of(stageEntity(1L, "Sujet", statutFinal)));
+
+            assertThatThrownBy(() -> stageService.updateStage(input, 1L))
+                    .isInstanceOf(BusinessRuleException.class)
+                    .hasMessageContaining("ne peut plus être modifié");
+            verify(stageRepository, never()).save(any());
+        }
+
         @Test
         @DisplayName("conserve le statut actuel si aucun statut n'est fourni")
         void shouldKeepStatusWhenNull() {
